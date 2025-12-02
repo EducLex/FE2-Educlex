@@ -5,15 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | EducLex</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../assets/style/auth/login.css">
+
+  <!-- Google Login Button (dipindahkan keluar dari HEAD, dimasukkan kembali ke BODY di bawah) -->
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
+        rel="stylesheet">
 
-  <!-- Font Awesome (tanpa integrity, aman untuk dev) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" referrerpolicy="no-referrer" />
-
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        referrerpolicy="no-referrer">
 </head>
+
 <body>
 
 <header>
@@ -50,11 +55,14 @@
 
       <div class="divider"><span>atau</span></div>
 
-      <!-- Tombol Google Login -->
+      <!-- Tombol Google Login (versi body, id tetap dipertahankan) -->
       <button type="button" class="google-btn" id="googleLoginBtn">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
         Login dengan Google
       </button>
+
+      <!-- Tombol Google dari HEAD dipindahkan ke sini agar valid -->
+      <button id="googleLoginBtn2" style="display:none;">Login dengan Google</button>
 
       <p>Belum punya akun? <a href="regis.html" id="toRegister">Daftar</a></p>
     </div>
@@ -96,6 +104,7 @@
   </div>
 </main>
 
+
 <!-- FOOTER -->
 <footer style="background-color:#5d4037; color:white; padding:40px 0; font-family:'Poppins', sans-serif;">
   <div style="max-width:1200px; margin:auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:40px; text-align:center;">
@@ -112,7 +121,8 @@
     <div>
       <h3 style="font-weight:600; border-left:4px solid #8d6e63; padding-left:8px;">Surel</h3>
       <p style="margin-top:10px;">
-        <a href="mailto:penkumhumas.kejatijabar@gmail.com" style="color:white; text-decoration:none;">
+        <a href="mailto:penkumhumas.kejatijabar@gmail.com"
+           style="color:white; text-decoration:none;">
           penkumhumas.kejatijabar@gmail.com
         </a>
       </p>
@@ -155,7 +165,8 @@
   </p>
 </footer>
 
+
 <!-- Login JS -->
-<script src="./assets/js/login.js"></script>
+<script src="../auth/fetch/login.js"></script>
 </body>
 </html>
