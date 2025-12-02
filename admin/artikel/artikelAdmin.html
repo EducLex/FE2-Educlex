@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EducLex - Artikel Admin</title>
+
+  <!-- Font & Style -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="logo">EducLex</div>
+    <div class="user-info">
+      <i class="fas fa-user-circle"></i> 
+      <span id="adminName">Admin</span>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="dbadmin.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="artikeladmin.html" class="active"><i class="fas fa-file-alt"></i> Artikel</a></li>
+        <li><a href="peraturanadmin.html"><i class="fas fa-gavel"></i> Peraturan</a></li>
+        <li><a href="tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Kelola Artikel</h1>
+
+      <!-- Form Tambah Artikel -->
+      <section class="data-section">
+        <h2>Tambah Artikel Baru</h2>
+        <form id="formArtikel" class="form-artikel">
+          <div class="form-group">
+            <label for="judul">Judul Artikel</label>
+            <input type="text" id="judul" name="judul" placeholder="Masukkan judul artikel" required>
+          </div>
+
+          <div class="form-group">
+            <label for="isi">Isi Artikel</label>
+            <textarea id="isi" name="isi" rows="8" placeholder="Tulis isi artikel di sini..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="gambar">Unggah Gambar</label>
+            <input type="file" id="gambar" name="gambar" accept="image/*">
+          </div>
+
+          <div class="form-group">
+            <label for="dokumen">Unggah Dokumen (Opsional)</label>
+            <input type="file" id="dokumen" name="dokumen" accept=".pdf,.doc,.docx">
+          </div>
+
+          <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Artikel</button>
+        </form>
+      </section>
+
+      <!-- Daftar Artikel -->
+      <section class="data-section" style="margin-top: 2.5rem;">
+        <h2>Daftar Artikel</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Tanggal</th>
+              <th>Penulis</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tabelArtikelBody">
+            <tr><td colspan="4" style="text-align:center;">Belum ada artikel</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="admin-footer">
+    <p>© 2025 EducLex | Artikel Admin</p>
+  </footer>
+
+  <!-- Script Simpan Artikel -->
+   <script src="./assets/js/artikel.js"></script>
+
+  <!-- 🔹 LOGIKA LOGOUT 🔹 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (!logoutBtn) return;
+
+      logoutBtn.addEventListener("click", async () => {
+        const result = await Swal.fire({
+          title: "Logout?",
+          text: "Apakah Anda yakin ingin keluar dari akun admin?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Ya, Logout",
+          cancelButtonText: "Batal",
+          reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+          try {
+            // Kirim request ke backend untuk logout
+            const res = await fetch("http://localhost:8080/auth/logout", {
+              method: "POST",
+              credentials: "include"
+            });
+
+            // Hapus data lokal
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("role");
+
+            // Notifikasi sukses
+            await Swal.fire({
+              icon: "success",
+              title: "Berhasil Logout!",
+              text: "Sesi admin telah diakhiri.",
+              timer: 1500,
+              showConfirmButton: false
+            });
+
+            // Redirect ke halaman login
+            window.location.href = "login.html";
+
+          } catch (error) {
+            console.error("Error saat logout:", error);
+            // Tetap logout lokal & redirect meski error
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("role");
+            await Swal.fire({
+              icon: "warning",
+              title: "Logout Sebagian",
+              text: "Koneksi gagal, tapi sesi lokal dihapus.",
+              confirmButtonText: "Oke"
+            });
+            window.location.href = "login.html";
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
