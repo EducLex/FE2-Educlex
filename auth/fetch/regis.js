@@ -1,4 +1,5 @@
 // Fallback showAlert jika belum ada
+
 if (typeof showAlert !== "function") {
   function showAlert(message, type = "info") {
     const container = document.getElementById("alert-container");
@@ -175,3 +176,143 @@ if (otpForm) {
     });
   }
 });
+
+// ============================================================
+// ⭐ GOOGLE REGISTER BUTTON
+// ============================================================
+
+const googleRegisBtn = document.getElementById("googleRegisBtn");
+
+if (googleRegisBtn) {
+  googleRegisBtn.addEventListener("click", () => {
+    localStorage.setItem("googleRegisterMode", "yes"); // tandai ini register
+    window.location.href = "http://localhost:8080/auth/google/login";
+  });
+}
+
+
+
+// ============================================================
+// ⭐ HANDLE CALLBACK GOOGLE — FIX: OTP MUNCUL DULU
+// ============================================================
+
+(function () {
+
+  const url = new URLSearchParams(window.location.search);
+
+  const googleEmail = url.get("email");
+  const googleToken = url.get("token");
+  const googleError = url.get("error");
+
+  // apakah user datang dari tombol REGISTER google?
+  const isGoogleRegister = localStorage.getItem("googleRegisterMode") === "yes";
+
+  // jika error dari backend
+  if (googleError) {
+    showAlert(googleError, "error");
+    return;
+  }
+
+
+
+  // ============================================================
+  // ⭐ 1. GOOGLE REGISTER MODE — WAJIB OTP & JANGAN LOGIN
+  // ============================================================
+
+  if (isGoogleRegister && googleEmail) {
+
+    console.log("📌 GOOGLE REGISTER MODE. Email:", googleEmail);
+
+    // Minta backend kirim OTP ke email Google
+    fetch("http://localhost:8080/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: googleEmail })
+    });
+
+    // Tampilkan form OTP
+    document.getElementById("register-form-container").style.display = "none";
+    document.getElementById("otp-form-container").style.display = "block";
+
+    document.getElementById("otpEmail").value = googleEmail;
+
+    localStorage.setItem("pendingGoogleEmail", googleEmail);
+
+    showAlert("Kode OTP telah dikirim ke email Anda!", "success");
+
+    return; // ❗ STOP — jangan eksekusi login
+  }
+
+
+
+
+  // ============================================================
+  // ⭐ 2. GOOGLE LOGIN MODE — MASUK KE INDEX
+  // ============================================================
+
+  if (googleToken) {
+
+    console.log("📌 GOOGLE LOGIN MODE. Token diterima");
+
+    localStorage.setItem("token", googleToken);
+
+    showAlert("Login berhasil!", "success");
+
+    setTimeout(() => {
+      window.location.href = "../index.html";
+    }, 800);
+
+    return;
+  }
+
+})();
+  
+
+
+// ============================================================
+// ⭐ VERIFIKASI OTP GOOGLE REGISTER
+// ============================================================
+
+const verifyGoogleOtpBtn = document.getElementById("verifyGoogleOtpBtn");
+
+if (verifyGoogleOtpBtn) {
+
+  verifyGoogleOtpBtn.addEventListener("click", () => {
+
+    const email = localStorage.getItem("pendingGoogleEmail");
+    const otp = document.getElementById("otpInput").value;
+
+    if (!otp) {
+      showAlert("Masukkan kode OTP!", "error");
+      return;
+    }
+
+    fetch("http://localhost:8080/auth/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, otp: otp })
+    })
+      .then(res => res.json())
+      .then(data => {
+
+        console.log("📥 RESPONSE VERIFY:", data);
+
+        if (data.error) {
+          showAlert(data.error, "error");
+          return;
+        }
+
+        // OTP VALID
+        showAlert("Verifikasi berhasil! Silakan login.", "success");
+
+        // Hapus mode register
+        localStorage.removeItem("pendingGoogleEmail");
+        localStorage.removeItem("googleRegisterMode");
+
+        setTimeout(() => {
+          window.location.href = "../login.html";
+        }, 900);
+      })
+      .catch(err => console.error(err));
+  });
+}
