@@ -209,3 +209,17 @@ button:hover {
     padding: 14px 20px;
   }
 }
+
+/* ====== LINK DAFTAR & LUPA PASSWORD — HILANGKAN UNDERLINE & GANTI WARNA COKLAT ====== */
+.form-links a,
+#toRegister {
+  color: #6d4c41 !important;
+  text-decoration: none !important;
+  font-size: 14px;
+}
+
+.form-links a:hover,
+#toRegister:hover {
+  text-decoration: none !important;
+  color: #5d4037 !important;
+}
