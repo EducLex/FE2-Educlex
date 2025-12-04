@@ -1,0 +1,335 @@
+/* =========================================
+   GLOBAL SETTINGS (sesuai index.css)
+========================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", "Open Sans", sans-serif;
+  background: linear-gradient(135deg, #d7ccc8, #a1887f);
+  color: #4e342e;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* =========================================
+   NAVBAR (sama persis dengan index.css)
+========================================= */
+.navbar {
+  width: 100%;
+  padding: 18px 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+  color: #3e2723;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar .logo {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.navbar .nav-links {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+}
+
+.navbar .nav-links li a {
+  text-decoration: none;
+  color: #3e2723;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.navbar .nav-links li a:hover,
+.navbar .nav-links li a.active {
+  color: #6d4c41;
+}
+
+/* Dropdown (sama persis) */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropbtn {
+  background: #6d4c41;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.dropbtn:hover {
+  background: #4e342e;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f5f5f5;
+  min-width: 140px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: #4e342e;
+  padding: 10px 14px;
+  text-decoration: none;
+  display: block;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.dropdown-content a:hover {
+  background-color: #d7ccc8;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* =========================================
+   ARTIKEL SECTION
+========================================= */
+.artikel-container {
+  padding: 60px 20px 100px;
+  max-width: 1200px;
+  margin: auto;
+  background: #fdf6f0;
+  border-radius: 18px;
+  margin-top: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.artikel-container h1 {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  color: #4e342e;
+  text-align: center;
+}
+
+.artikel-container p {
+  text-align: center;
+  color: #6d4c41;
+  margin-bottom: 20px;
+}
+
+/* Filter Section */
+.filter-section {
+  margin: 20px auto;
+  max-width: 1100px;
+  padding: 15px;
+  background: #f5ebe1;
+  border-radius: 10px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.filter-section label {
+  font-weight: 600;
+  color: #3b2f2f;
+  white-space: nowrap;
+}
+
+.filter-section select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #b08968;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  background: #fff;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+/* Artikel Grid */
+.artikel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 10px;
+}
+
+.artikel-card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.artikel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+}
+
+.artikel-card h3 {
+  color: #6d4c41;
+  margin-bottom: 10px;
+  font-size: 1.15rem;
+}
+
+.artikel-card p {
+  font-size: 0.95rem;
+  color: #5d4037;
+  margin-bottom: 12px;
+}
+
+.artikel-card .bidang {
+  font-size: 0.85rem;
+  color: #8d6e63;
+  font-weight: 600;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+  background-color: #fdf6f0;
+  margin: 5% auto;
+  padding: 30px;
+  border-radius: 18px;
+  width: 90%;
+  max-width: 700px;
+  position: relative;
+  color: #4e342e;
+}
+
+.close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #6d4c41;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #4e342e;
+}
+
+#modalImage {
+  width: 100%;
+  border-radius: 12px;
+  margin: 15px 0;
+  display: none;
+}
+
+#modalFile a {
+  display: inline-block;
+  background: #6d4c41;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  margin-top: 10px;
+}
+
+#modalFile a:hover {
+  background: #4e342e;
+}
+
+/* =========================================
+   FOOTER (disesuaikan agar hanya 1 footer utama)
+========================================= */
+
+/* Hapus footer kedua yang berlebihan di HTML agar tidak bentrok */
+/* Tapi jika ingin tetap punya footer seperti di index, cukup gunakan satu */
+
+/* Footer utama (sama seperti di index.css) */
+footer {
+  font-family: "Poppins", sans-serif;
+  background-color: #5d4037;
+  color: white;
+  padding: 40px 20px;
+  margin-top: 60px;
+}
+
+footer h3 {
+  font-weight: 600;
+  border-left: 4px solid #8d6e63;
+  padding-left: 8px;
+  margin-bottom: 12px;
+}
+
+footer a {
+  color: white;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+footer a:hover {
+  color: #d7ccc8;
+}
+
+/* Hapus footer duplikat dari HTML agar tidak muncul dua kali */
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 16px 20px;
+  }
+
+  .navbar .nav-links {
+    gap: 18px;
+  }
+
+  .artikel-container {
+    padding: 40px 15px 80px;
+  }
+
+  .artikel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+
+  .navbar .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .artikel-container h1 {
+    font-size: 1.7rem;
+  }
+}

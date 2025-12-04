@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tulisan Jaksa | EducLex</title>
+  <!-- Global style -->
+  <link rel="stylesheet" href="/assets/style/User/tulisan.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">EducLex</div>
+      <ul class="nav-links">
+        <li><a href="/index.html">Beranda</a></li>
+        <li><a href="/user/artikel/artikel.html">Artikel</a></li>
+        <li><a href="/user/tanyajaksa/tanya.html">Tanya Jaksa</a></li>
+        <li><a href="/user/tulisan/tulisan.html" class="active">Tulisan Jaksa</a></li>
+        <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
+      </ul>
+
+      <div class="dropdown">
+        <button class="dropbtn">👤 Akun ▾</button>
+        <div class="dropdown-content" id="userMenu">
+          <a href="/auth/login.html" id="loginLink">🔑 Login</a>
+          <a href="#" id="btn-logout">🚪 Logout</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Konten -->
+  <main class="tulisan-container">
+    <h1>Tulisan Para Jaksa</h1>
+    <p class="intro">
+      Kumpulan tulisan, opini, dan edukasi hukum dari para jaksa Kejaksaan Tinggi Jawa Barat.
+    </p>
+
+    <!-- Filter Bidang -->
+    <div class="filter-section">
+      <label for="filterBidang">Bidang:</label>
+      <select id="filterBidang">
+        <option value="" selected>Semua Bidang</option>
+        <option value="Pembinaan">Pembinaan</option>
+        <option value="Intelijen">Intelijen</option>
+        <option value="Pidana Umum">Pidana Umum</option>
+        <option value="Pidana Khusus">Pidana Khusus</option>
+        <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
+        <option value="Pidana Militer">Pidana Militer</option>
+        <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+      </select>
+    </div>
+
+    <!-- Grid Tulisan -->
+    <div class="tulisan-grid" id="tulisanBaru">
+      <p style="grid-column: 1 / -1; text-align: center; color: #777;">⏳ Memuat data tulisan...</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3>Alamat</h3>
+        <p>
+          Jl. L. L. R.E. Martadinata No.54,<br />
+          Citarum, Kec. Bandung Wetan,<br />
+          Kota Bandung, Jawa Barat 40115
+        </p>
+      </div>
+      <div>
+        <h3>Surel</h3>
+        <p>
+          <a href="mailto:penkumhumas.kejatijabar@gmail.com">penkumhumas.kejatijabar@gmail.com</a>
+        </p>
+      </div>
+      <div>
+        <h3>Bantuan</h3>
+        <p>Telp: (022) 4239375</p>
+      </div>
+      <div>
+        <h3>Media Sosial</h3>
+        <div class="social-icons">
+          <a href="https://www.facebook.com/KejaksaanTinggiJawaBarat" target="_blank" title="Facebook">
+            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" />
+          </a>
+          <a href="https://www.instagram.com/kejati_jabar" target="_blank" title="Instagram">
+            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" />
+          </a>
+          <a href="https://x.com/kejati_jabar" target="_blank" title="X (Twitter)">
+            <img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png" alt="X Twitter" />
+          </a>
+        </div>
+      </div>
+    </div>
+    <hr />
+    <p>
+      © 2025 <strong>EducLex</strong> | Edukasi Hukum untuk Remaja.<br />
+      Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
+    </p>
+  </footer>
+
+  <!-- Auth & Logout -->
+  <script src="/assets/js/auth.js"></script>
+
+  <!-- Fetch & Render Tulisan -->
+  <script src="/user/tulisan/fetch/tulisanList.js"></script>
+</body>
+</html>

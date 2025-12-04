@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tanya Jaksa | EducLex</title>
+  <!-- Konsisten dengan index: font & SweetAlert -->
+  <link rel="stylesheet" href="/assets/style/User/tanya.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- ========== Header Navbar ========== -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">EducLex</div>
+      <ul class="nav-links">
+        <li><a href="/index.html">Beranda</a></li>
+        <li><a href="/user/artikel/artikel.html">Artikel</a></li>
+        <li><a href="/user/tanyajaksa/tanya.html" class="active">Tanya Jaksa</a></li>
+        <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
+        <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
+      </ul>
+      <div class="dropdown">
+        <button class="dropbtn">👤 Akun ▾</button>
+        <div class="dropdown-content" id="userMenu">
+          <a href="/auth/login.html" id="loginLink">🔑 Login</a>
+          <a href="#" id="btn-logout">🚪 Logout</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ========== Main Section ========== -->
+  <main class="tanya-container">
+    <h1 class="main-title" style="font-weight: 700 !important; font-family: 'Poppins', sans-serif;">
+      Pertanyaan & Jawaban dari Jaksa
+    </h1>
+    <p class="intro" style="font-weight: 700;">
+    Berikut kumpulan pertanyaan hukum dari masyarakat yang telah dijawab oleh Jaksa Kejaksaan Tinggi Jawa Barat.
+    </p>
+
+    <div style="text-align: center;">
+      <button id="btnAjukan" class="btn-ajukan">+ Ajukan Pertanyaan</button>
+    </div>
+
+    <section class="daftar-section">
+      <h2 class="section-title" style="font-weight: 700 !important; font-family: 'Poppins', sans-serif;">
+        Daftar Tanya Jawab
+      </h2>
+      <div id="daftar-pertanyaan" class="daftar-pertanyaan">
+        <p style="text-align: center; color: #777;">⏳ Memuat data pertanyaan...</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======== Modal Ajukan Pertanyaan ======== -->
+  <div id="modalTanya" class="modal-tanya">
+    <div class="modal-content-tanya">
+      <h2>Ajukan Pertanyaan</h2>
+      <p style="margin-bottom:10px; color:#5d4037; font-size:0.95rem;">
+        Silakan isi formulir di bawah ini untuk bertanya kepada Jaksa.
+      </p>
+
+      <label for="namaUser" class="label-tanya">Nama Lengkap</label>
+      <input type="text" id="namaUser" class="input-tanya" placeholder="Masukkan nama Anda..." />
+
+      <label for="jenis" class="label-tanya">Bidang</label>
+      <select id="jenis" class="input-tanya">
+        <option value="Pembinaan">Pembinaan</option>
+        <option value="Intelijen">Intelijen</option>
+        <option value="Pidana Umum">Pidana Umum</option>
+        <option value="Pidana Khusus">Pidana Khusus</option>
+        <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
+        <option value="Pidana Militer">Pidana Militer</option>
+        <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+      </select>
+
+      <label for="isiTanya" class="label-tanya">Isi Pertanyaan</label>
+      <textarea
+        id="isiTanya"
+        class="input-tanya"
+        rows="5"
+        placeholder="Tuliskan pertanyaan atau pengaduan Anda di sini..."
+      ></textarea>
+
+      <div style="text-align: right; margin-top: 1rem;">
+        <button id="kirimTanya" class="btn-kirim-tanya">Kirim</button>
+        <button id="tutupModal" class="btn-batal-tanya">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Footer ========== -->
+  <footer>
+    <div style="max-width:1200px; margin:auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:40px; text-align:center;">
+      <div>
+        <h3>Alamat</h3>
+        <p style="margin-top:10px; line-height:1.6;">
+          Jl. L. L. R.E. Martadinata No.54,<br />
+          Citarum, Kec. Bandung Wetan,<br />
+          Kota Bandung, Jawa Barat 40115
+        </p>
+      </div>
+      <div>
+        <h3>Surel</h3>
+        <p style="margin-top:10px;">
+          <a href="mailto:penkumhumas.kejatijabar@gmail.com">penkumhumas.kejatijabar@gmail.com</a>
+        </p>
+      </div>
+      <div>
+        <h3>Bantuan</h3>
+        <p style="margin-top:10px; line-height:1.6;">Telp: (022) 4239375</p>
+      </div>
+      <div>
+        <h3>Media Sosial</h3>
+        <div style="margin-top:10px; display:flex; justify-content:center; gap:12px;">
+          <a href="https://www.facebook.com/KejaksaanTinggiJawaBarat" target="_blank" title="Facebook">
+            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" width="20" height="20" />
+          </a>
+          <a href="https://www.instagram.com/kejati_jabar" target="_blank" title="Instagram">
+            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" width="20" height="20" />
+          </a>
+          <a href="https://x.com/kejati_jabar" target="_blank" title="X (Twitter)">
+            <img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png" alt="X Twitter" width="18" height="18" />
+          </a>
+        </div>
+      </div>
+    </div>
+    <hr style="margin:40px auto; width:85%; border:0.5px solid rgba(255,255,255,0.2);" />
+    <p style="text-align:center; font-size:14px; color:#E0E0E0;">
+      © 2025 <strong>EducLex</strong> | Edukasi Hukum untuk Remaja.<br />
+      Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
+    </p>
+  </footer>
+
+  <!-- ========== SCRIPT ========= -->
+  <script src="/assets/js/auth.js"></script>
+
+  <script>
+    const modal = document.getElementById("modalTanya");
+    const btnAjukan = document.getElementById("btnAjukan");
+    const btnTutup = document.getElementById("tutupModal");
+    const btnKirim = document.getElementById("kirimTanya");
+
+    btnAjukan.onclick = () => (modal.style.display = "flex");
+    btnTutup.onclick = () => (modal.style.display = "none");
+    btnKirim.onclick = () => {
+      const nama = document.getElementById("namaUser").value.trim();
+      const isi = document.getElementById("isiTanya").value.trim();
+      if (!nama || !isi) {
+        Swal.fire({
+          icon: "warning",
+          title: "Lengkapi Formulir!",
+          text: "Nama dan isi pertanyaan wajib diisi.",
+          confirmButtonColor: "#6D4C41"
+        });
+        return;
+      }
+      Swal.fire({
+        icon: "success",
+        title: "Terkirim!",
+        text: "Pertanyaan Anda telah dikirim ke Jaksa.",
+        confirmButtonColor: "#6D4C41"
+      });
+      modal.style.display = "none";
+      document.getElementById("namaUser").value = "";
+      document.getElementById("isiTanya").value = "";
+    };
+
+    window.onclick = (e) => {
+      if (e.target === modal) modal.style.display = "none";
+    };
+  </script>
+
+  <script src="/user/tanyajaksa/fetch/tanyaList.js"></script>
+</body>
+</html>

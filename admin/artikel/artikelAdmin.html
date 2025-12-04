@@ -7,7 +7,7 @@
 
   <!-- Font & Style -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="/assets/style/admin/artikeladmin.css">
 
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -31,10 +31,10 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="dbadmin.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="artikeladmin.html" class="active"><i class="fas fa-file-alt"></i> Artikel</a></li>
-        <li><a href="peraturanadmin.html"><i class="fas fa-gavel"></i> Peraturan</a></li>
-        <li><a href="tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
+        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/admin/artikel/artikeladmin.html" id="artikelLink"><i class="fas fa-file-alt"></i> Artikel</a></li>
+        <li><a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink"><i class="fas fa-gavel"></i> Peraturan</a></li>
+        <li><a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
       </ul>
     </aside>
 
@@ -43,32 +43,49 @@
       <h1>Kelola Artikel</h1>
 
       <!-- Form Tambah Artikel -->
-      <section class="data-section">
-        <h2>Tambah Artikel Baru</h2>
-        <form id="formArtikel" class="form-artikel">
-          <div class="form-group">
-            <label for="judul">Judul Artikel</label>
-            <input type="text" id="judul" name="judul" placeholder="Masukkan judul artikel" required>
-          </div>
+<!-- Form Tambah Artikel -->
+<section class="data-section">
+  <h2>Tambah Artikel Baru</h2>
+  <form id="formArtikel" class="form-artikel" enctype="multipart/form-data">
+    
+    <div class="form-group">
+      <label for="judul">Judul Artikel</label>
+      <input type="text" id="judul" name="judul" placeholder="Masukkan judul artikel" required>
+    </div>
 
-          <div class="form-group">
-            <label for="isi">Isi Artikel</label>
-            <textarea id="isi" name="isi" rows="8" placeholder="Tulis isi artikel di sini..." required></textarea>
-          </div>
+    <div class="form-group">
+      <label for="isi">Isi Artikel</label>
+      <textarea id="isi" name="isi" rows="8" placeholder="Tulis isi artikel di sini..." required></textarea>
+    </div>
 
-          <div class="form-group">
-            <label for="gambar">Unggah Gambar</label>
-            <input type="file" id="gambar" name="gambar" accept="image/*">
-          </div>
+    <!-- 🟢 Tambahan baru yg belum ada sebelumnya agar sesuai body -->
+    <div class="form-group">
+      <label for="penulis">Penulis</label>
+      <input type="text" id="penulis" name="penulis" placeholder="Masukkan nama penulis" required>
+    </div>
 
-          <div class="form-group">
-            <label for="dokumen">Unggah Dokumen (Opsional)</label>
-            <input type="file" id="dokumen" name="dokumen" accept=".pdf,.doc,.docx">
-          </div>
+    <!-- 🟢 Gambar kembali sebagai FILE upload -->
+    <div class="form-group">
+      <label for="gambar"> Gambar</label>
+      <input type="file" id="gambar" name="gambar" accept="image/*" required>
+    </div>
 
-          <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Artikel</button>
-        </form>
-      </section>
+    <!-- 🟢 Dokumen tetap FILE upload sesuai permintaan -->
+    <div class="form-group">
+      <label for="dokumen"> Dokumen (Opsional)</label>
+      <input type="file" id="dokumen" name="dokumen" accept=".pdf,.doc,.docx">
+    </div>
+
+    <!-- 🟢 Tambahan field categoryId -->
+    <div class="form-group">
+      <label for="categoryId">Category ID</label>
+      <input type="text" id="categoryId" name="categoryId" placeholder="Masukkan Category ID" required>
+    </div>
+
+    <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Artikel</button>
+  </form>
+</section>
+
 
       <!-- Daftar Artikel -->
       <section class="data-section" style="margin-top: 2.5rem;">
@@ -96,67 +113,8 @@
   </footer>
 
   <!-- Script Simpan Artikel -->
-   <script src="./assets/js/artikel.js"></script>
+   <script src="/admin/artikel/fetch/addArtikel.js"></script>
+   <script src="/auth/fetch/logout.js"></script>
 
-  <!-- 🔹 LOGIKA LOGOUT 🔹 -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (!logoutBtn) return;
-
-      logoutBtn.addEventListener("click", async () => {
-        const result = await Swal.fire({
-          title: "Logout?",
-          text: "Apakah Anda yakin ingin keluar dari akun admin?",
-          icon: "question",
-          showCancelButton: true,
-          confirmButtonText: "Ya, Logout",
-          cancelButtonText: "Batal",
-          reverseButtons: true
-        });
-
-        if (result.isConfirmed) {
-          try {
-            // Kirim request ke backend untuk logout
-            const res = await fetch("http://localhost:8080/auth/logout", {
-              method: "POST",
-              credentials: "include"
-            });
-
-            // Hapus data lokal
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("role");
-
-            // Notifikasi sukses
-            await Swal.fire({
-              icon: "success",
-              title: "Berhasil Logout!",
-              text: "Sesi admin telah diakhiri.",
-              timer: 1500,
-              showConfirmButton: false
-            });
-
-            // Redirect ke halaman login
-            window.location.href = "login.html";
-
-          } catch (error) {
-            console.error("Error saat logout:", error);
-            // Tetap logout lokal & redirect meski error
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("role");
-            await Swal.fire({
-              icon: "warning",
-              title: "Logout Sebagian",
-              text: "Koneksi gagal, tapi sesi lokal dihapus.",
-              confirmButtonText: "Oke"
-            });
-            window.location.href = "login.html";
-          }
-        }
-      });
-    });
-  </script>
 </body>
 </html>

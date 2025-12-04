@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+  <!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logout | EducLex</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Styling tambahan untuk alert */
+    .alert-box {
+      margin: 20px auto;
+      max-width: 500px;
+      text-align: center;
+    }
+    .alert {
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      margin: 10px 0;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .alert.success { background: #2ecc71; color: white; }
+    .alert.error   { background: #e74c3c; color: white; }
+    .alert.info    { background: #3498db; color: white; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logout-container {
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .btn-logout, .btn-cancel {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      margin: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn-logout { background: #e74c3c; color: white; }
+    .btn-cancel { background: #95a5a6; color: white; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="logo">EducLex</div>
+      <ul class="nav-links">
+        <li><a href="index.html">Beranda</a></li>
+        <li><a href="artikel.html">Artikel</a></li>
+        <li><a href="tanya.html">Tanya Jaksa</a></li>
+        <li><a href="tulisan.html">Tulisan Jaksa</a></li>
+        <li><a href="peraturan.html">Peraturan</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div id="alert-container" class="alert-box"></div>
+    <div class="logout-container">
+      <h1>Logout</h1>
+      <p>Apakah Anda yakin ingin keluar dari akun ini?</p>
+      <button id="btn-logout" class="btn-logout">🔒 Logout Sekarang</button>
+      <button id="btn-cancel" class="btn-cancel">❌ Batal</button>
+    </div>
+  </main>
+
+<!-- ======== Footer Section ======== -->
+<footer style="background-color:#5d4037; color:white; padding:40px 0; font-family:'Poppins', sans-serif;">
+  <div style="max-width:1200px; margin:auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:40px; text-align:center;">
+
+    <!-- Alamat -->
+    <div>
+      <h3 style="font-weight:600; border-left:4px solid #8d6e63; padding-left:8px;">Alamat</h3>
+      <p style="margin-top:10px; line-height:1.6;">
+        Jl. L. L. R.E. Martadinata No.54,<br>
+        Citarum, Kec. Bandung Wetan,<br>
+        Kota Bandung, Jawa Barat 40115
+      </p>
+    </div>
+
+    <!-- Surel -->
+    <div>
+      <h3 style="font-weight:600; border-left:4px solid #8d6e63; padding-left:8px;">Surel</h3>
+      <p style="margin-top:10px;">
+        <a href="mailto:penkumhumas.kejatijabar@gmail.com" style="color:white; text-decoration:none;">
+          penkumhumas.kejatijabar@gmail.com
+        </a>
+      </p>
+    </div>
+
+    <!-- Bantuan -->
+    <div>
+      <h3 style="font-weight:600; border-left:4px solid #8d6e63; padding-left:8px;">Bantuan</h3>
+      <p style="margin-top:10px; line-height:1.6;">Telp: (022) 4239375</p>
+    </div>
+
+    <!-- Media Sosial -->
+    <div>
+      <h3 style="font-weight:600; border-left:4px solid #8d6e63; padding-left:8px;">Media Sosial</h3>
+      <div style="margin-top:10px; display:flex; justify-content:center; gap:12px;">
+
+        <!-- Facebook -->
+        <a href="https://www.facebook.com/KejaksaanTinggiJawaBarat" target="_blank" title="Facebook"
+          style="background:white; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+          <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" width="20" height="20">
+        </a>
+
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/kejati_jabar" target="_blank" title="Instagram"
+          style="background:white; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+          <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" width="20" height="20">
+        </a>
+
+        <!-- X (Twitter) -->
+        <a href="https://x.com/kejati_jabar" target="_blank" title="X (Twitter)"
+          style="background:white; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+          <img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png" alt="X Twitter" width="18" height="18">
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+  <hr style="margin:40px auto; width:85%; border:0.5px solid rgba(255,255,255,0.2);">
+
+  <p style="text-align:center; font-size:14px; color:#E0E0E0;">
+    © 2025 <strong>EducLex</strong> | Edukasi Hukum untuk Remaja.<br>
+    Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
+  </p>
+</footer>
+
+  <script src="logout.js"></script>
+</body>
+</html>

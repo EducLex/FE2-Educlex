@@ -1,0 +1,427 @@
+/* =========================================
+   GLOBAL SETTINGS (sama seperti index.css)
+========================================= */
+h1, h2 {
+  font-weight: 700 !important;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", "Open Sans", sans-serif;
+  background: linear-gradient(135deg, #d7ccc8, #a1887f);
+  color: #4e342e;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* =========================================
+   NAVBAR (identik dengan index.css)
+========================================= */
+.navbar {
+  width: 100%;
+  padding: 18px 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+  color: #3e2723;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar .logo {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.navbar .nav-links {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+}
+
+.navbar .nav-links li a {
+  text-decoration: none;
+  color: #3e2723;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.navbar .nav-links li a:hover,
+.navbar .nav-links li a.active {
+  color: #6d4c41;
+}
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropbtn {
+  background: #6d4c41;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.dropbtn:hover {
+  background: #4e342e;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f5f5f5;
+  min-width: 140px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: #4e342e;
+  padding: 10px 14px;
+  text-decoration: none;
+  display: block;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.dropdown-content a:hover {
+  background-color: #d7ccc8;
+}
+
+.dropdown:hover .dropdown-content,
+.dropdown.show .dropdown-content {
+  display: block;
+}
+
+/* =========================================
+   TANYA JAKSA SECTION
+========================================= */
+.tanya-container {
+  padding: 60px 20px 100px;
+  max-width: 1100px;
+  margin: auto;
+  background: #fdf6f0;
+  border-radius: 18px;
+  margin-top: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  font-family: "Open Sans", sans-serif;
+}
+
+/* ===== ELEMEN UTAMA YANG HARUS BOLD ===== */
+.main-title {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  color: #4e342e;
+  text-align: center;
+  font-weight: 700 !important;
+}
+
+.section-title {
+  text-align: center;
+  margin: 30px 0 20px;
+  color: #4e342e;
+  font-size: 1.5rem;
+  font-weight: 700 !important;
+}
+
+/* ===== ELEMEN UTAMA YANG HARUS BOLD ===== */
+.tanya-container h1 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  color: #4e342e;
+  text-align: center;
+  font-weight: 700 !important; /* 🔥 PAKSA BOLD */
+}
+
+.tanya-container .intro {
+  text-align: center;
+  color: #6d4c41;
+  margin-bottom: 20px;
+  font-weight: 600 !important; /* 🔥 PAKSA SEMI-BOLD */
+}
+
+.btn-ajukan {
+  background-color: #6d4c41;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 700 !important; /* 🔥 PAKSA BOLD */
+  transition: 0.3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: inline-block;
+  margin: 20px 0;
+}
+
+.btn-ajukan:hover {
+  background-color: #5d4037;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.daftar-section h2 {
+  text-align: center;
+  margin: 30px 0 20px;
+  color: #4e342e;
+  font-size: 1.5rem;
+  font-weight: 700 !important; /* 🔥 PAKSA BOLD */
+}
+
+/* ====== DAFTAR PERTANYAAN ====== */
+.daftar-pertanyaan {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  margin-top: 10px;
+}
+
+.pertanyaan-item {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+  border-left: 5px solid #8d6e63;
+  transition: transform 0.2s;
+  font-weight: 600 !important; /* 🔥 PAKSA SEMI-BOLD UNTUK SEMUA TEKS DI DALAMNYA */
+}
+
+.pertanyaan-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pertanyaan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.nama-pengguna {
+  font-weight: 700 !important; /* 🔥 PAKSA BOLD */
+  color: #3e2723;
+  font-size: 1rem;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700 !important; /* 🔥 PAKSA BOLD */
+  color: white;
+  text-transform: uppercase;
+}
+
+.status-belum {
+  background: #e57373;
+}
+
+.status-sudah {
+  background: #66bb6a;
+}
+
+.isi-pertanyaan {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #5d4037;
+  margin: 10px 0;
+  word-wrap: break-word;
+  font-weight: 600 !important; /* 🔥 PAKSA SEMI-BOLD */
+}
+
+.kategori {
+  font-size: 0.85rem;
+  color: #6d4c41;
+  background: #f8f4f2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 5px;
+  font-weight: 600 !important; /* 🔥 PAKSA SEMI-BOLD */
+}
+
+.tanggal {
+  font-size: 0.8rem;
+  color: #757575;
+  margin-top: 5px;
+  display: block;
+  font-weight: 600 !important; /* 🔥 PAKSA SEMI-BOLD */
+}
+
+/* ====== MODAL AJUKAN PERTANYAAN ====== */
+.modal-tanya {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modal-content-tanya {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 550px;
+  width: 100%;
+  padding: 30px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  animation: fadeIn 0.3s ease-in-out;
+  font-family: "Open Sans", sans-serif;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content-tanya h2 {
+  color: #4e342e;
+  margin-bottom: 1rem;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+.label-tanya {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600 !important;
+  color: #4e342e;
+  font-size: 0.9rem;
+}
+
+.input-tanya,
+textarea.input-tanya,
+select.input-tanya {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d7ccc8;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: "Open Sans", sans-serif;
+  resize: none;
+}
+
+.btn-kirim-tanya,
+.btn-batal-tanya {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600 !important;
+  font-size: 0.95rem;
+  transition: 0.3s;
+}
+
+.btn-kirim-tanya {
+  background-color: #6d4c41;
+  color: white;
+  margin-left: 10px;
+}
+
+.btn-batal-tanya {
+  background-color: #d7ccc8;
+  color: #3e2723;
+}
+
+.btn-kirim-tanya:hover {
+  background-color: #5d4037;
+}
+
+.btn-batal-tanya:hover {
+  background-color: #bcaaa4;
+}
+
+/* =========================================
+   FOOTER (sama seperti index)
+========================================= */
+footer {
+  font-family: "Poppins", sans-serif;
+  background-color: #5d4037;
+  color: white;
+  padding: 40px 20px;
+  margin-top: 60px;
+}
+
+footer h3 {
+  font-weight: 600;
+  border-left: 4px solid #8d6e63;
+  padding-left: 8px;
+  margin-bottom: 12px;
+}
+
+footer a {
+  color: white;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+footer a:hover {
+  color: #d7ccc8;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 16px 20px;
+  }
+  .navbar .nav-links {
+    gap: 18px;
+  }
+  .tanya-container {
+    padding: 40px 15px 80px;
+  }
+  .modal-content-tanya {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+  .navbar .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pertanyaan-item {
+    padding: 15px;
+  }
+  .nama-pengguna {
+    font-size: 0.95rem;
+  }
+  .isi-pertanyaan {
+    font-size: 0.95rem;
+  }
+}

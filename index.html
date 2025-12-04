@@ -26,28 +26,30 @@
 </head>
 <body>
   <!-- Navbar -->
-  <header>
-    <nav class="navbar">
-      <div class="logo">EducLex</div>
-      <ul class="nav-links">
-        <li><a href="index.html" class="active">Beranda</a></li>
-        <li><a href="artikel.html" class="require-login">Artikel</a></li>
-        <li><a href="tanya.html" class="require-login">Tanya Jaksa</a></li>
-        <li><a href="tulisan.html" class="require-login">Tulisan Jaksa</a></li>
-        <li><a href="peraturan.html" class="require-login">Peraturan</a></li>
-      </ul>
+<header>
+  <nav class="navbar">
+    <div class="logo">EducLex</div>
+  <ul class="nav-links">
+    <li><a href="/index.html">Beranda</a></li>
+    <li><a href="/user/artikel/artikel.html" class="active">Artikel</a></li>
+    <li><a href="/user/tanyajaksa/tanya.html">Tanya Jaksa</a></li>
+    <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
+    <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
+  </ul>
 
-      <!-- 🔄 Dropdown User -->
-      <div class="dropdown">
-        <button class="dropbtn">👤 Akun ▾</button>
-        <div class="dropdown-content" id="userMenu">
-          <a href="login.html" id="loginLink">🔑 Login</a>
-          <!-- ✅ ID diubah agar sesuai dengan logout.js -->
-          <a href="#" id="btn-logout">🚪 Logout</a>
-        </div>
+    <!-- Dropdown User -->
+    <div class="dropdown">
+      <button class="dropbtn">👤 Akun ▾</button>
+      <div class="dropdown-content" id="userMenu">
+        <a href="auth/login.html" id="loginLink">🔑 Login</a>
+
+        <!-- 🔥 Logout utama (dipanggil juga oleh navbar logout) -->
+        <a href="#" id="btn-logout">🚪 Logout</a>
       </div>
-    </nav>
-  </header>
+    </div>
+  </nav>
+</header>
+
 
   <!-- Hero Section -->
   <section class="hero" id="hero">
@@ -146,6 +148,6 @@
   <script src="script.js"></script>
 
   <!-- ✅ Logout Handler -->
-  <script src="assets/js/logout.js"></script>
+  <script src="/auth/fetch/logout.js"></script>
 </body>
 </html>
