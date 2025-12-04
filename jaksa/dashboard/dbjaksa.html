@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EducLex - Dashboard Jaksa</title>
+
+  <!-- Font & Style -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/style/jaksa/dbjaksa.css" />
+
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="logo">EducLex</div>
+    <div class="user-info">
+      <i class="fas fa-user-tie"></i>
+      <span id="jaksaName">Jaksa</span>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="/jaksa/dashboard/dbjaksa.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/jaksa/tanyaJaksa/tanyajaksa.html"><i class="fas fa-comments"></i> Tanya Jaksa</a></li>
+        <li><a href="/jaksa/tulisanJaksa/tulisanjaksa.html"><i class="fas fa-pen"></i> Tulisan Jaksa</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Dashboard Jaksa</h1>
+
+      <!-- Statistik Cards -->
+      <div class="stats-cards">
+        <div class="stat">
+          <h3>💬 Pertanyaan Belum Dijawab</h3>
+          <p id="totalBelumDijawab">0</p>
+        </div>
+        <div class="stat">
+          <h3>✅ Pertanyaan Terjawab</h3>
+          <p id="totalTerjawab">0</p>
+        </div>
+        <div class="stat">
+          <h3>✍️ Tulisan Jaksa</h3>
+          <p id="totalTulisanJaksa">0</p>
+        </div>
+      </div>
+
+      <!-- Tabel Pertanyaan -->
+      <section class="data-section">
+        <h2>Daftar Pertanyaan & Pengaduan Masyarakat</h2>
+        <table class="data-table" id="tanyaTable">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Kategori</th>
+              <th>Pertanyaan / Pengaduan</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tanyaTableBody">
+            <!-- Data akan diisi oleh JavaScript -->
+          </tbody>
+        </table>
+
+        <!-- Form Jawaban Jaksa (sembunyi secara default) -->
+        <div id="formJawabanJaksa" class="hidden">
+          <h3>💬 Jawab Pengaduan</h3>
+          <form id="jawabanForm">
+            <textarea id="jawabanText" placeholder="Tulis jawaban Anda di sini..." rows="4" required></textarea>
+            <div class="form-actions">
+              <button type="submit" class="btn-simpan"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
+              <button type="button" id="batalJawab" class="btn-batal"><i class="fas fa-times"></i> Batal</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Tabel Tulisan Jaksa -->
+      <section class="data-section">
+        <h2>Tulisan Jaksa Terbaru</h2>
+        <table class="data-table" id="tulisanTable">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Tanggal</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tulisanTableBody">
+            <!-- Data akan diisi oleh JavaScript -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="admin-footer">
+    <p>© 2025 EducLex | Dashboard Jaksa</p>
+  </footer>
+
+  <!-- Script Utama -->
+  <script src="assets/js/dbjaksa.js"></script>
+  <script src="/auth/fetch/logout.js"></script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EducLex - Tulisan Jaksa</title>
+
+  <!-- Font & Style -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/style/jaksa/tulisanjaksa.css" />
+
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="logo">EducLex</div>
+    <div class="user-info">
+      <i class="fas fa-user-tie"></i>
+      <span id="jaksaName">Jaksa</span>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="/jaksa/dashboard/dbjaksa.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/jaksa/tanyaJaksa/tanyajaksa.html"><i class="fas fa-comments"></i> Tanya Jaksa</a></li>
+        <li><a href="/jaksa/tulisanJaksa/tulisanjaksa.html"><i class="fas fa-pen"></i> Tulisan Jaksa</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Kelola Tulisan Jaksa</h1>
+
+      <!-- Form Tambah Tulisan (di dalam card) -->
+      <section class="data-section">
+        <h2>Tambah Tulisan Baru</h2>
+        <form id="formTulisan" class="form-artikel">
+          <div class="form-group">
+            <label for="penulis">Penulis</label>
+            <input type="text" id="penulis" placeholder="Contoh: Asisten Bidang Intelijen" required />
+          </div>
+
+          <div class="form-group">
+            <label for="judul">Judul Tulisan</label>
+            <input type="text" id="judul" placeholder="Contoh: Pencegahan Tindak Pidana di Kalangan Pelajar" required />
+          </div>
+
+          <div class="form-group">
+            <label for="isi">Isi Tulisan</label>
+            <textarea id="isi" placeholder="Tulis isi lengkap tulisan di sini..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="tanggal">Tanggal Publikasi</label>
+            <input type="date" id="tanggal" required />
+          </div>
+
+          <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Tulisan</button>
+        </form>
+      </section>
+
+      <!-- Daftar Tulisan -->
+      <section class="data-section" style="margin-top: 2.5rem;">
+        <h2>Daftar Tulisan Jaksa</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Penulis</th>
+              <th>Tanggal</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tabelTulisanBody">
+            <tr>
+              <td colspan="4" style="text-align: center; color: #6d4c41;">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="admin-footer">
+    <p>© 2025 EducLex | Tulisan Jaksa</p>
+  </footer>
+
+  <!-- Script Eksternal -->
+  <script src="/auth/fetch/logout.js"></script>
+  <script>
+    // Set tanggal hari ini sebagai default
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("tanggal").value = today;
+
+      // Ambil data tulisan dari backend
+      loadTulisan();
+
+      // Handle form submit
+      document.getElementById("formTulisan").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          Swal.fire("Error", "Anda belum login.", "error");
+          return;
+        }
+
+        const data = {
+          penulis: document.getElementById("penulis").value.trim(),
+          judul: document.getElementById("judul").value.trim(),
+          isi: document.getElementById("isi").value.trim(),
+          tanggal: document.getElementById("tanggal").value
+        };
+
+        if (!data.penulis || !data.judul || !data.isi || !data.tanggal) {
+          Swal.fire("Peringatan", "Semua kolom wajib diisi.", "warning");
+          return;
+        }
+
+        try {
+          const res = await fetch("http://localhost:8080/tulisan", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify(data)
+          });
+
+          if (res.ok) {
+            Swal.fire("Berhasil!", "Tulisan berhasil disimpan.", "success");
+            document.getElementById("formTulisan").reset();
+            document.getElementById("tanggal").value = today;
+            loadTulisan(); // refresh daftar
+          } else {
+            const err = await res.json().catch(() => ({}));
+            Swal.fire("Gagal", err.message || "Gagal menyimpan tulisan.", "error");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          Swal.fire("Error", "Gagal terhubung ke server.", "error");
+        }
+      });
+    });
+
+    // Fungsi ambil daftar tulisan
+    async function loadTulisan() {
+      const token = localStorage.getItem("token");
+      const tbody = document.getElementById("tabelTulisanBody");
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>`;
+
+      try {
+        const res = await fetch("http://localhost:8080/tulisan", {
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+
+        if (!res.ok) throw new Error("Gagal mengambil data");
+
+        const tulisanList = await res.json();
+        if (!Array.isArray(tulisanList)) throw new Error("Format data tidak valid");
+
+        if (tulisanList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada tulisan.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = tulisanList.map(t => `
+          <tr>
+            <td>${t.judul || "-"}</td>
+            <td>${t.penulis || "-"}</td>
+            <td>${t.tanggal ? new Date(t.tanggal).toLocaleDateString("id-ID") : "-"}</td>
+            <td>
+              <button class="btn-edit"><i class="fas fa-edit"></i></button>
+              <button class="btn-delete" data-id="${t.id}"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join("");
+
+        // Tambahkan event untuk hapus
+        document.querySelectorAll(".btn-delete").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
+            const confirm = await Swal.fire({
+              title: "Hapus Tulisan?",
+              text: "Aksi ini tidak bisa dikembalikan.",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Ya, Hapus",
+              cancelButtonText: "Batal"
+            });
+
+            if (confirm.isConfirmed) {
+              try {
+                const res = await fetch(`http://localhost:8080/tulisan/${id}`, {
+                  method: "DELETE",
+                  headers: { "Authorization": "Bearer " + token }
+                });
+                if (res.ok) {
+                  Swal.fire("Dihapus!", "Tulisan berhasil dihapus.", "success");
+                  loadTulisan();
+                } else {
+                  Swal.fire("Gagal", "Tidak bisa menghapus tulisan.", "error");
+                }
+              } catch (err) {
+                Swal.fire("Error", "Gagal menghubungi server.", "error");
+              }
+            }
+          });
+        });
+
+      } catch (error) {
+        console.error("Load error:", error);
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#f44336;">Gagal memuat data</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

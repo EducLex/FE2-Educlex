@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EducLex - Tanya Jaksa</title>
+
+  <!-- Font & Style -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/style/jaksa/tanyajaksa.css" />
+
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="logo">EducLex</div>
+    <div class="user-info">
+      <i class="fas fa-user-tie"></i>
+      <span id="jaksaName">Jaksa</span>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="/jaksa/dashboard/dbjaksa.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/jaksa/tanyaJaksa/tanyajaksa.html"><i class="fas fa-comments"></i> Tanya Jaksa</a></li>
+        <li><a href="/jaksa/tulisanJaksa/tulisanjaksa.html"><i class="fas fa-pen"></i> Tulisan Jaksa</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Kelola Pertanyaan Masyarakat</h1>
+
+      <!-- Filter & Search -->
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <h2>Daftar Pertanyaan</h2>
+        <div style="display: flex; gap: 0.75rem;">
+          <select id="filterStatus">
+            <option value="semua">Semua Status</option>
+            <option value="belum">Belum Dijawab</option>
+            <option value="sudah">Sudah Dijawab</option>
+          </select>
+          <input type="text" id="searchPertanyaan" placeholder="Cari pertanyaan..." style="padding: 6px 10px; border: 1px solid #d7ccc8; border-radius: 6px;" />
+        </div>
+      </div>
+
+      <!-- Tabel Pertanyaan -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Pertanyaan</th>
+            <th>Kategori</th>
+            <th>Tanggal</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabelPertanyaanBody">
+          <tr><td colspan="6" style="text-align: center; color: #6d4c41;">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="admin-footer">
+    <p>© 2025 EducLex | Tanya Jaksa</p>
+  </footer>
+
+  <!-- Modal Jawaban -->
+  <div id="modalJawaban" class="modal-container">
+    <div class="modal-content">
+      <h2>Balas Pertanyaan</h2>
+      <p><strong>Nama:</strong> <span id="modalNama"></span></p>
+      <p><strong>Pertanyaan:</strong> <span id="modalPertanyaan"></span></p>
+      <p><strong>Kategori:</strong> <span id="modalKategori"></span></p>
+
+      <label for="jawabanText">Jawaban Anda:</label>
+      <textarea id="jawabanText" rows="4" placeholder="Ketik jawaban resmi sebagai Jaksa..."></textarea>
+
+      <div style="text-align: right; margin-top: 1rem;">
+        <button id="btnKirimJawaban" class="btn-simpan"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
+        <button id="btnTutupJawaban" class="btn-delete">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Eksternal -->
+  <script src="/auth/fetch/logout.js"></script>
+  <script>
+    let currentQuestionId = null;
+
+    // Load pertanyaan saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPertanyaan();
+
+      // Filter & pencarian
+      document.getElementById("filterStatus").addEventListener("change", loadPertanyaan);
+      document.getElementById("searchPertanyaan").addEventListener("input", loadPertanyaan);
+
+      // Modal control
+      document.getElementById("btnTutupJawaban").addEventListener("click", () => {
+        document.getElementById("modalJawaban").style.display = "none";
+      });
+    });
+
+    // Ambil data pertanyaan dari API
+    async function loadPertanyaan() {
+      const token = localStorage.getItem("token");
+      const status = document.getElementById("filterStatus").value;
+      const search = document.getElementById("searchPertanyaan").value.trim().toLowerCase();
+
+      const tbody = document.getElementById("tabelPertanyaanBody");
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Memuat...</td></tr>`;
+
+      try {
+        const res = await fetch("http://localhost:8080/questions", {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) throw new Error("Gagal memuat data");
+        const data = await res.json();
+
+        const filtered = data.filter(q => {
+          const matchStatus = status === "semua" ||
+            (status === "belum" && !q.jawaban) ||
+            (status === "sudah" && q.jawaban);
+          const matchSearch = !search ||
+            q.nama?.toLowerCase().includes(search) ||
+            q.isi?.toLowerCase().includes(search) ||
+            q.kategori?.toLowerCase().includes(search);
+          return matchStatus && matchSearch;
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada data.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(q => `
+          <tr>
+            <td>${q.nama || "Anonim"}</td>
+            <td>${q.isi || "-"}</td>
+            <td>${q.kategori || "-"}</td>
+            <td>${q.tanggal ? new Date(q.tanggal).toLocaleDateString("id-ID") : "-"}</td>
+            <td>
+              ${q.jawaban ? 
+                '<span class="badge answered">Dijawab</span>' : 
+                '<span class="badge pending">Belum</span>'
+              }
+            </td>
+            <td>
+              <button class="btn-jawab" data-id="${q._id}" data-nama="${q.nama}" data-isi="${q.isi}" data-kategori="${q.kategori}">
+                <i class="fas fa-reply"></i> Jawab
+              </button>
+            </td>
+          </tr>
+        `).join("");
+
+        // Pasang event pada tombol jawab
+        document.querySelectorAll(".btn-jawab").forEach(btn => {
+          btn.addEventListener("click", () => {
+            currentQuestionId = btn.dataset.id;
+            document.getElementById("modalNama").textContent = btn.dataset.nama || "Anonim";
+            document.getElementById("modalPertanyaan").textContent = btn.dataset.isi || "-";
+            document.getElementById("modalKategori").textContent = btn.dataset.kategori || "-";
+            document.getElementById("jawabanText").value = "";
+            document.getElementById("modalJawaban").style.display = "flex";
+          });
+        });
+
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#f44336;">Gagal memuat data</td></tr>`;
+      }
+    }
+
+    // Kirim jawaban ke /questions/{id}/diskusi
+    document.getElementById("btnKirimJawaban").addEventListener("click", async () => {
+      const token = localStorage.getItem("token");
+      const pesan = document.getElementById("jawabanText").value.trim();
+      if (!pesan) {
+        Swal.fire("Peringatan", "Jawaban tidak boleh kosong.", "warning");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:8080/questions/${currentQuestionId}/diskusi`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify({
+            pengirim: "Jaksa",
+            pesan: pesan
+          })
+        });
+
+        if (res.ok) {
+          Swal.fire("Berhasil!", "Jawaban telah dikirim.", "success");
+          document.getElementById("modalJawaban").style.display = "none";
+          loadPertanyaan(); // refresh
+        } else {
+          Swal.fire("Gagal", "Gagal mengirim jawaban.", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Koneksi gagal.", "error");
+      }
+    });
+  </script>
+</body>
+</html>
