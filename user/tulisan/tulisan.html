@@ -25,13 +25,12 @@
         <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
       </ul>
 
-      <div class="dropdown">
-        <button class="dropbtn">👤 Akun ▾</button>
-        <div class="dropdown-content" id="userMenu">
-          <a href="/auth/login.html" id="loginLink">🔑 Login</a>
-          <a href="#" id="btn-logout">🚪 Logout</a>
-        </div>
+    <div class="dropdown">
+      <button class="dropbtn">👤 User ▾</button>
+      <div class="dropdown-content" id="userMenu">
+        <a href="#" id="btn-logout">🚪 Logout</a>
       </div>
+    </div>
     </nav>
   </header>
 
@@ -106,8 +105,8 @@
     </p>
   </footer>
 
-  <!-- Auth & Logout -->
-  <script src="/assets/js/auth.js"></script>
+  <!-- ✅ Logout Handler -->
+  <script src="/auth/fetch/logout.js"></script>
 
   <!-- Fetch & Render Tulisan -->
   <script src="/user/tulisan/fetch/tulisanList.js"></script>

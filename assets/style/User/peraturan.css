@@ -15,6 +15,20 @@ body {
   line-height: 1.6;
 }
 
+.main-title {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  color: #4e342e;
+  text-align: center;
+  font-weight: 700 !important;
+}
+
+.loading-text {
+  text-align: center;
+  color: #777;
+  font-weight: 600 !important;
+}
+
 /* =========================================
    NAVBAR (IDENTIK DENGAN index.css)
 ========================================= */
