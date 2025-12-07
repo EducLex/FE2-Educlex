@@ -80,7 +80,8 @@
         <option value="Pidana Khusus">Pidana Khusus</option>
         <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
         <option value="Pidana Militer">Pidana Militer</option>
-        <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+        <option value="Asisten Pengawasan"> Pengawasan</option>
+        <option value="Pemulihan Aset"> Pemulihan Aset</option>
       </select>
 
       <label for="isiTanya" class="label-tanya">Isi Pertanyaan</label>
@@ -142,44 +143,9 @@
   </footer>
 
   <!-- ========== SCRIPT ========= -->
-  <script src="/assets/js/auth.js"></script>
+  <script src="/user/tanyajaksa/fetch/tanya.js"></script>
 
-  <script>
-    const modal = document.getElementById("modalTanya");
-    const btnAjukan = document.getElementById("btnAjukan");
-    const btnTutup = document.getElementById("tutupModal");
-    const btnKirim = document.getElementById("kirimTanya");
-
-    btnAjukan.onclick = () => (modal.style.display = "flex");
-    btnTutup.onclick = () => (modal.style.display = "none");
-    btnKirim.onclick = () => {
-      const nama = document.getElementById("namaUser").value.trim();
-      const isi = document.getElementById("isiTanya").value.trim();
-      if (!nama || !isi) {
-        Swal.fire({
-          icon: "warning",
-          title: "Lengkapi Formulir!",
-          text: "Nama dan isi pertanyaan wajib diisi.",
-          confirmButtonColor: "#6D4C41"
-        });
-        return;
-      }
-      Swal.fire({
-        icon: "success",
-        title: "Terkirim!",
-        text: "Pertanyaan Anda telah dikirim ke Jaksa.",
-        confirmButtonColor: "#6D4C41"
-      });
-      modal.style.display = "none";
-      document.getElementById("namaUser").value = "";
-      document.getElementById("isiTanya").value = "";
-    };
-
-    window.onclick = (e) => {
-      if (e.target === modal) modal.style.display = "none";
-    };
-  </script>
-
-  <script src="/user/tanyajaksa/fetch/tanyaList.js"></script>
+   <!-- Logout handler (opsional, kalau kamu pakai ini juga di index.html) -->
+  <script src="/auth/fetch/logout.js"></script>
 </body>
 </html>

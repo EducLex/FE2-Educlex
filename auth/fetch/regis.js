@@ -106,65 +106,66 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================
   //  LANGKAH 2: VERIFIKASI OTP (PERBARUI FORMAT)
   // ============================================
-if (otpForm) {
-  otpForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  if (otpForm) {
+    otpForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const email = document.getElementById("otpEmail")?.value.trim();
-    const otp = document.getElementById("otpCode")?.value.trim();
+      const email = document.getElementById("otpEmail")?.value.trim();
+      const otp = document.getElementById("otpCode")?.value.trim();
 
-    if (!email || !otp) {
-      showAlert("Email dan kode OTP wajib diisi!", "warning");
-      return;
-    }
-
-    console.log("📤 SENDING OTP VERIFY:", { email, otp });
-
-    // Gunakan JSON.stringify
-    const payload = { email, otp };
-
-    try {
-      const res = await fetch(`${apiBase}/auth/verify-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-      console.log("📥 RAW RESPONSE VERIFY:", text);
-
-      let data = {};
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { error: text };
-      }
-
-      console.log("📥 PARSED RESPONSE VERIFY:", data);
-
-      if (!res.ok) {
-        showAlert(data.error || data.message || "OTP salah!", "error");
+      if (!email || !otp) {
+        showAlert("Email dan kode OTP wajib diisi!", "warning");
         return;
       }
 
-      Swal.fire({
-        icon: "success",
-        title: "Verifikasi Berhasil!",
-        text: "Akun Anda telah aktif. Silakan login.",
-        timer: 2500,
-        showConfirmButton: false,
-      }).then(() => {
-        window.location.href = "login.html"; // redirect ke login
-      });
+      console.log("📤 SENDING OTP VERIFY:", { email, otp });
 
-    } catch (err) {
-      console.error("❌ FETCH ERROR VERIFY:", err);
-      showAlert("Gagal terhubung ke server.", "error");
-    }
-  });
-}
+      // Gunakan JSON.stringify
+      const payload = { email, otp };
+
+      try {
+        const res = await fetch(`${apiBase}/auth/verify-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const text = await res.text();
+        console.log("📥 RAW RESPONSE VERIFY:", text);
+
+        let data = {};
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { error: text };
+        }
+
+        console.log("📥 PARSED RESPONSE VERIFY:", data);
+
+        if (!res.ok) {
+          showAlert(data.error || data.message || "OTP salah!", "error");
+          return;
+        }
+
+        Swal.fire({
+          icon: "success",
+          title: "Verifikasi Berhasil!",
+          text: "Akun Anda telah aktif. Silakan login.",
+          timer: 2500,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.href = "login.html"; // redirect ke login
+        });
+
+      } catch (err) {
+        console.error("❌ FETCH ERROR VERIFY:", err);
+        showAlert("Gagal terhubung ke server.", "error");
+      }
+    });
+  }
+
   // ============================================
   //  KEMBALI KE REGISTER
   // ============================================
@@ -173,6 +174,36 @@ if (otpForm) {
       otpContainer.style.display = "none";
       registerContainer.style.display = "block";
       document.getElementById("otpCode").value = "";
+    });
+  }
+
+  // ============================================
+  //  🔐 CEK LOGIN SAAT KLIK "AJUKAN PERTANYAAN"
+  //  (Halaman tanya.html)
+  // ============================================
+  const askButton = document.getElementById("btn-ajukan-pertanyaan");
+
+  if (askButton) {
+    askButton.addEventListener("click", (e) => {
+      const token = localStorage.getItem("token");
+
+      // kalau belum login → tahan tombol & munculkan SweetAlert
+      if (!token) {
+        e.preventDefault();
+
+        Swal.fire({
+          icon: "warning",
+          title: "Login dulu ya",
+          text: "Kamu harus registrasi dan login terlebih dahulu untuk mengajukan pertanyaan.",
+          showCancelButton: true,
+          confirmButtonText: "Login / Daftar",
+          cancelButtonText: "Nanti saja",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = "/auth/login.html";
+          }
+        });
+      }
     });
   }
 });
@@ -213,8 +244,6 @@ if (googleRegisBtn) {
     return;
   }
 
-
-
   // ============================================================
   // ⭐ 1. GOOGLE REGISTER MODE — WAJIB OTP & JANGAN LOGIN
   // ============================================================
@@ -243,9 +272,6 @@ if (googleRegisBtn) {
     return; // ❗ STOP — jangan eksekusi login
   }
 
-
-
-
   // ============================================================
   // ⭐ 2. GOOGLE LOGIN MODE — MASUK KE INDEX
   // ============================================================
@@ -266,8 +292,6 @@ if (googleRegisBtn) {
   }
 
 })();
-  
-
 
 // ============================================================
 // ⭐ VERIFIKASI OTP GOOGLE REGISTER

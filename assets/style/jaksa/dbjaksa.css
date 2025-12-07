@@ -307,33 +307,114 @@ body {
 /* =========================
    RESPONSIVE
 ========================= */
-@media (max-width: 800px) {
+
+/* Laptop kecil / tablet landscape */
+@media (max-width: 992px) {
   .admin-container {
     flex-direction: column;
   }
+
   .sidebar {
     width: 100%;
     display: flex;
     overflow-x: auto;
+    padding: 16px 12px;
   }
+
   .sidebar ul {
     display: flex;
-    gap: 14px;
+    gap: 12px;
   }
+
   .sidebar ul li {
     margin-bottom: 0;
   }
+
+  .sidebar ul li a {
+    white-space: nowrap;
+  }
+
+  .main-content {
+    padding: 24px;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 520px;
+  }
+
+  /* kartu statistik biar lebih rapat */
+  .stats-cards {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
 }
 
-@media (max-width: 500px) {
-  .stats-cards {
-    grid-template-columns: 1fr;
-  }
+/* Tablet portrait */
+@media (max-width: 768px) {
   .main-content {
     padding: 20px;
   }
+
+  .stats-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Tabel bisa discroll horizontal, tidak pecah */
+  .data-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .data-table table {
+    width: 100%;
+  }
+}
+
+/* HP / layar kecil */
+@media (max-width: 576px) {
   .admin-header {
     flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 0.9rem;
+  }
+
+  .sidebar {
+    padding: 12px 10px;
+  }
+
+  .sidebar ul {
+    gap: 8px;
+  }
+
+  .sidebar ul li a {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .main-content {
+    padding: 16px 12px;
+  }
+
+  .main-content h1 {
+    font-size: 22px;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px;
+    font-size: 0.85rem;
   }
 }
