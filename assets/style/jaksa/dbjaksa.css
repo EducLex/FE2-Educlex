@@ -69,7 +69,7 @@ body {
 }
 
 /* =========================
-   SIDEBAR
+   SIDEBAR (sama style dengan admin)
 ========================= */
 .sidebar {
   width: 240px;
@@ -307,8 +307,6 @@ body {
 /* =========================
    RESPONSIVE
 ========================= */
-
-/* Laptop kecil / tablet landscape */
 @media (max-width: 992px) {
   .admin-container {
     flex-direction: column;
@@ -338,18 +336,11 @@ body {
     padding: 24px;
   }
 
-  .modal-content {
-    width: 90%;
-    max-width: 520px;
-  }
-
-  /* kartu statistik biar lebih rapat */
   .stats-cards {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 
-/* Tablet portrait */
 @media (max-width: 768px) {
   .main-content {
     padding: 20px;
@@ -359,20 +350,14 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Tabel bisa discroll horizontal, tidak pecah */
   .data-table {
     display: block;
     width: 100%;
     overflow-x: auto;
     white-space: nowrap;
   }
-
-  .data-table table {
-    width: 100%;
-  }
 }
 
-/* HP / layar kecil */
 @media (max-width: 576px) {
   .admin-header {
     flex-direction: column;

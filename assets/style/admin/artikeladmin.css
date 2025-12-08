@@ -17,7 +17,7 @@ body{
 }
 
 /* =========================
-   HEADER
+   HEADER / TOP NAV
 ========================= */
 .admin-header{
   width:100%;
@@ -33,7 +33,10 @@ body{
   top:0;
   z-index:10;
 }
-.logo{ font-size:28px; font-weight:700; }
+.admin-header .logo{
+  font-size:28px;
+  font-weight:700;
+}
 
 .user-info{
   display:flex;
@@ -63,17 +66,8 @@ body{
 }
 
 /* =========================
-   SIDEBAR
+   SIDEBAR  (disamakan dengan dbadmin)
 ========================= */
-.sidebar{
-  width:240px;
-  background:#fff8f0;
-  padding:25px 18px;
-  box-shadow:3px 0 18px rgba(0,0,0,.12);
-}
-.sidebar ul{ list-style:none; }
-.sidebar li{ margin-bottom:16px; }
-
 .sidebar a{
   text-decoration:none;
   color:#4e342e;
@@ -90,8 +84,38 @@ body{
   background:#d7ccc8;
 }
 
+
+.sidebar{
+  width:240px;
+  background:#fff8f0;
+  padding:25px 18px;
+  box-shadow:3px 0 18px rgba(0,0,0,.12);
+}
+
+.sidebar ul{ list-style:none; }
+.sidebar ul li{ margin-bottom:16px; }
+
+/* ikon + teks di satu baris */
+.sidebar ul li a{
+  text-decoration:none;
+  color:#4e342e;
+  font-weight:600;
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-radius:12px;
+  transition:0.3s;
+}
+
+/* hover + menu aktif */
+.sidebar ul li a:hover,
+.sidebar ul li a.active{
+  background:#d7ccc8;
+}
+
 /* =========================
-   CONTENT
+   MAIN CONTENT
 ========================= */
 .main-content{
   flex:1;
@@ -229,19 +253,24 @@ body{
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE (match dbadmin)
 ========================= */
 @media(max-width:900px){
   .admin-container{ flex-direction:column; }
   .sidebar{ width:100%; display:flex; overflow-x:auto; }
   .sidebar ul{ display:flex; gap:10px; }
-  .sidebar li{ margin-bottom:0; }
+  .sidebar ul li{ margin-bottom:0; }
 }
 
 @media(max-width:500px){
   .main-content{ padding:20px; }
   .form-artikel{ padding:18px; }
   .btn-simpan{ width:100%; text-align:center; }
+  .admin-header{
+    flex-direction:column;
+    gap:8px;
+    padding:12px 20px;
+  }
 }
 
 /* Animasi smooth */

@@ -9,11 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/style/admin/artikeladmin.css">
 
-  <!-- SweetAlert -->
+    <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <!-- Font Awesome (CDN CSS, aman dari CORS) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
 </head>
 <body>
   <!-- Header -->
@@ -31,8 +36,8 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/admin/artikel/artikeladmin.html" id="artikelLink"><i class="fas fa-file-alt"></i> Artikel</a></li>
+        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+<li><a href="/admin/artikel/artikeladmin.html" id="artikelLink" class="active"><i class="fas fa-file-alt"></i> Artikel</a></li>
         <li><a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink"><i class="fas fa-gavel"></i> Peraturan</a></li>
         <li><a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
       </ul>
@@ -78,8 +83,8 @@
 
     <!-- 🟢 Tambahan field categoryId -->
     <div class="form-group">
-      <label for="categoryId">Category ID</label>
-      <input type="text" id="categoryId" name="categoryId" placeholder="Masukkan Category ID" required>
+      <label for="categoryId">Category</label>
+      <input type="text" id="categoryId" name="categoryId" placeholder="Masukkan Category" required>
     </div>
 
     <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Artikel</button>
@@ -113,7 +118,7 @@
   </footer>
 
   <!-- Script Simpan Artikel -->
-   <script src="/admin/artikel/fetch/addArtikel.js"></script>
+   <script src="/admin/artikel/fetch/artikeladmin.js"></script>
    <script src="/auth/fetch/logout.js"></script>
 
 </body>

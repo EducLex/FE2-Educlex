@@ -12,8 +12,12 @@
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <!-- Font Awesome (pakai CSS CDN biar nggak CORS) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
 </head>
 <body>
   <!-- Header -->
@@ -31,10 +35,26 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/admin/artikel/artikeladmin.html" id="artikelLink"><i class="fas fa-file-alt"></i> Artikel</a></li>
-        <li><a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink"><i class="fas fa-gavel"></i> Peraturan</a></li>
-        <li><a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
+        <li>
+          <a href="/admin/dashboard/dbadmin.html" id="dashboardLink">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin/artikel/artikeladmin.html" id="artikelLink">
+            <i class="fas fa-file-alt"></i> Artikel
+          </a>
+        </li>
+        <li>
+          <a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink">
+            <i class="fas fa-gavel"></i> Peraturan
+          </a>
+        </li>
+        <li>
+          <a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink" class="active">
+            <i class="fas fa-user-tie"></i> Tambah Jaksa
+          </a>
+        </li>
       </ul>
     </aside>
 
@@ -45,71 +65,62 @@
       <!-- Form Tambah Jaksa -->
       <section class="data-section">
         <h2>Tambah Jaksa Baru</h2>
-    <form id="formJaksa" class="form-artikel">
+        <form id="formJaksa" class="form-artikel">
 
-    <div class="form-group">
-        <label for="nama">Nama Jaksa</label>
-        <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap jaksa" required>
-    </div>
+          <div class="form-group">
+            <label for="nama">Nama Jaksa</label>
+            <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap jaksa" required>
+          </div>
 
-    <div class="form-group">
-        <label for="nip">NIP Jaksa</label>
-        <input type="text" id="nip" name="nip" placeholder="Masukkan NIP Jaksa" required>
-    </div>
+          <div class="form-group">
+            <label for="nip">NIP Jaksa</label>
+            <input type="text" id="nip" name="nip" placeholder="Masukkan NIP Jaksa" required>
+          </div>
 
-    <div class="form-group">
-        <label for="jabatan">Jabatan</label>
-        <input type="text" id="jabatan" name="jabatan" placeholder="Masukkan jabatan jaksa" required>
-    </div>
+          <div class="form-group">
+            <label for="jabatan">Jabatan</label>
+            <input type="text" id="jabatan" name="jabatan" placeholder="Masukkan jabatan jaksa" required>
+          </div>
 
-    <!-- 🔽 sesuai permintaan dropdown -->
-    <div class="form-group">
-        <label for="bidang_nama">Bidang Jaksa</label>
-        <select id="bidang_nama" name="bidang_nama" required>
-        <option value="" disabled selected>Pilih Bidang Jaksa</option>
-        <option value="Pembinaan">Pembinaan</option>
-        <option value="Intelijen">Intelijen</option>
-        <option value="Pidana Umum">Pidana Umum</option>
-        <option value="Pidana Khusus">Pidana Khusus</option>
-        <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
-        <option value="Pidana Militer">Pidana Militer</option>
-        <option value="Asisten Pengawasan">Asisten Pengawasan</option>
-        </select>
-    </div>
+          <!-- Dropdown Bidang -->
+          <div class="form-group">
+            <label for="bidang_nama">Bidang Jaksa</label>
+            <select id="bidang_nama" name="bidang_nama" required>
+              <option value="" disabled selected>Pilih Bidang Jaksa</option>
+              <option value="Pembinaan">Pembinaan</option>
+              <option value="Intelijen">Intelijen</option>
+              <option value="Pidana Umum">Pidana Umum</option>
+              <option value="Pidana Khusus">Pidana Khusus</option>
+              <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
+              <option value="Pidana Militer">Pidana Militer</option>
+              <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+            </select>
+          </div>
 
-    <!-- agar cocok dengan body POSTMAN -->
-    <div class="form-group">
-        <label for="bidang_id">Bidang ID</label>
-        <input type="text" id="bidang_id" name="bidang_id" placeholder="Masukkan bidang_id" required>
-    </div>
+          <div class="form-group">
+            <label for="email">Email Jaksa</label>
+            <input type="email" id="email" name="email" placeholder="Masukkan email jaksa" required>
+          </div>
 
-    <div class="form-group">
-        <label for="email">Email Jaksa</label>
-        <input type="email" id="email" name="email" placeholder="Masukkan email jaksa" required>
-    </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+          </div>
 
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Masukkan password" required>
-    </div>
+          <div class="form-group">
+            <label for="confirm_password">Konfirmasi Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Konfirmasi password" required>
+          </div>
 
-    <div class="form-group">
-        <label for="confirm_password">Konfirmasi Password</label>
-        <input type="password" id="confirm_password" name="confirm_password" placeholder="Konfirmasi password" required>
-    </div>
+          <div class="form-group">
+            <label for="foto">Unggah Foto Jaksa</label>
+            <input type="file" id="foto" name="foto" accept="image/*" required>
+          </div>
 
-    <div class="form-group">
-        <label for="foto">Unggah Foto Jaksa</label>
-        <input type="file" id="foto" name="foto" accept="image/*" required>
-    </div>
-
-    <button type="submit" class="btn-simpan">
-        <i class="fas fa-save"></i> Simpan Data Jaksa
-    </button>
-    </form>
-
-
-
+          <button type="submit" class="btn-simpan">
+            <i class="fas fa-save"></i> Simpan Data Jaksa
+          </button>
+        </form>
       </section>
 
       <!-- Daftar Jaksa -->
@@ -141,6 +152,5 @@
   <!-- Script Halaman -->
   <script src="tambahjaksa.js"></script>
   <script src="/auth/fetch/logout.js"></script>
-
 </body>
 </html>

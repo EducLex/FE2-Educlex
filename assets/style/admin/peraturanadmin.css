@@ -63,7 +63,7 @@ body{
 }
 
 /* =========================
-   SIDEBAR (Sama seperti Artikel)
+   SIDEBAR (sama seperti dashboard & artikel)
 ========================= */
 .sidebar{
   width:240px;
@@ -150,7 +150,7 @@ body{
   border-color:#6d4c41;
 }
 
-/* Button */
+/* Buttons */
 .btn-secondary{
   width:max-content;
   background:#ffb74d;

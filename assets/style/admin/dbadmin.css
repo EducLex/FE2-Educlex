@@ -187,17 +187,43 @@ body{
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE (disamakan dengan artikeladmin.css)
 ========================= */
-@media(max-width:800px){
-  .admin-container{ flex-direction:column; }
-  .sidebar{ width:100%; display:flex; overflow-x:auto; }
-  .sidebar ul{ display:flex; gap:14px; }
-  .sidebar ul li{ margin-bottom:0; }
+@media (max-width: 900px){
+  .admin-container{
+    flex-direction: column;
+  }
+
+  .sidebar{
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .sidebar ul{
+    display: flex;
+    gap: 10px;
+  }
+
+  .sidebar ul li{
+    margin-bottom: 0;
+  }
 }
 
-@media(max-width:500px){
-  .stats-cards{ grid-template-columns:1fr; }
-  .main-content{ padding:20px; }
-  .admin-header{ flex-direction:column; gap:8px; }
+@media (max-width: 500px){
+  .main-content{
+    padding: 20px;
+  }
+
+  /* kartu statistik jadi 1 kolom di layar kecil */
+  .stats-cards{
+    grid-template-columns: 1fr;
+  }
+
+  /* header dibuat lebih rapat & bisa stack */
+  .admin-header{
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 20px;
+  }
 }

@@ -13,12 +13,11 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <!-- Font Awesome (CSS saja, aman dari CORS) -->
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-  referrerpolicy="no-referrer"
-/>
-
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
 
   <!-- Favicon -->
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
@@ -39,9 +38,21 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/jaksa/dashboard/dbjaksa.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/jaksa/tanyaJaksa/tanyajaksa.html"><i class="fas fa-comments"></i> Tanya Jaksa</a></li>
-        <li><a href="/jaksa/tulisanJaksa/tulisanjaksa.html"><i class="fas fa-pen"></i> Tulisan Jaksa</a></li>
+        <li>
+          <a href="/jaksa/dashboard/dbjaksa.html">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/jaksa/tanyaJaksa/tanyajaksa.html" class="active">
+            <i class="fas fa-comments"></i> Tanya Jaksa
+          </a>
+        </li>
+        <li>
+          <a href="/jaksa/tulisanJaksa/tulisanjaksa.html">
+            <i class="fas fa-pen"></i> Tulisan Jaksa
+          </a>
+        </li>
       </ul>
     </aside>
 
@@ -50,9 +61,9 @@
       <h1>Kelola Pertanyaan Masyarakat</h1>
 
       <!-- Filter & Search -->
-      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+      <div class="filter-bar">
         <h2>Daftar Pertanyaan</h2>
-        <div style="display: flex; gap: 0.75rem;">
+        <div class="filter-controls">
           <select id="filterStatus">
             <option value="semua">Semua Status</option>
             <option value="belum">Belum Dijawab</option>
@@ -62,7 +73,6 @@
             type="text"
             id="searchPertanyaan"
             placeholder="Cari pertanyaan..."
-            style="padding: 6px 10px; border: 1px solid #d7ccc8; border-radius: 6px;"
           />
         </div>
       </div>
@@ -104,7 +114,7 @@
       <label for="jawabanText">Jawaban Anda:</label>
       <textarea id="jawabanText" rows="4" placeholder="Ketik jawaban resmi sebagai Jaksa..."></textarea>
 
-      <div style="text-align: right; margin-top: 1rem;">
+      <div class="modal-actions">
         <button id="btnKirimJawaban" class="btn-simpan">
           <i class="fas fa-paper-plane"></i> Kirim Jawaban
         </button>

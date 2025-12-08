@@ -12,8 +12,12 @@
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <!-- Font Awesome (pakai CSS CDN biar ikon pasti muncul, gak CORS) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
 
   <!-- Favicon -->
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
@@ -34,9 +38,21 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/jaksa/dashboard/dbjaksa.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/jaksa/tanyaJaksa/tanyajaksa.html"><i class="fas fa-comments"></i> Tanya Jaksa</a></li>
-        <li><a href="/jaksa/tulisanJaksa/tulisanjaksa.html"><i class="fas fa-pen"></i> Tulisan Jaksa</a></li>
+        <li>
+          <a href="/jaksa/dashboard/dbjaksa.html" class="active">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/jaksa/tanyaJaksa/tanyajaksa.html">
+            <i class="fas fa-comments"></i> Tanya Jaksa
+          </a>
+        </li>
+        <li>
+          <a href="/jaksa/tulisanJaksa/tulisanjaksa.html">
+            <i class="fas fa-pen"></i> Tulisan Jaksa
+          </a>
+        </li>
       </ul>
     </aside>
 
@@ -62,13 +78,13 @@
 
       <!-- Tabel Pertanyaan -->
       <section class="data-section">
-        <h2>Daftar Pertanyaan & Pengaduan Masyarakat</h2>
+        <h2>Daftar Pertanyaan</h2>
         <table class="data-table" id="tanyaTable">
           <thead>
             <tr>
               <th>Nama</th>
               <th>Kategori</th>
-              <th>Pertanyaan / Pengaduan</th>
+              <th>Pertanyaan</th>
               <th>Status</th>
               <th>Aksi</th>
             </tr>
@@ -84,8 +100,12 @@
           <form id="jawabanForm">
             <textarea id="jawabanText" placeholder="Tulis jawaban Anda di sini..." rows="4" required></textarea>
             <div class="form-actions">
-              <button type="submit" class="btn-simpan"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
-              <button type="button" id="batalJawab" class="btn-batal"><i class="fas fa-times"></i> Batal</button>
+              <button type="submit" class="btn-simpan">
+                <i class="fas fa-paper-plane"></i> Kirim Jawaban
+              </button>
+              <button type="button" id="batalJawab" class="btn-batal">
+                <i class="fas fa-times"></i> Batal
+              </button>
             </div>
           </form>
         </div>

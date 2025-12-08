@@ -12,15 +12,19 @@
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <!-- Font Awesome (pakai CSS CDN, bukan kit JS) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
 </head>
 <body>
   <!-- Header -->
   <header class="admin-header">
     <div class="logo">EducLex</div>
     <div class="user-info">
-      <i class="fas fa-user-circle"></i> 
+      <i class="fas fa-user-circle"></i>
       <span id="adminName">Admin</span>
       <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
@@ -31,10 +35,26 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/admin/artikel/artikeladmin.html" id="artikelLink"><i class="fas fa-file-alt"></i> Artikel</a></li>
-        <li><a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink"><i class="fas fa-gavel"></i> Peraturan</a></li>
-        <li><a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
+        <li>
+          <a href="/admin/dashboard/dbadmin.html" id="dashboardLink">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin/artikel/artikeladmin.html" id="artikelLink">
+            <i class="fas fa-file-alt"></i> Artikel
+          </a>
+        </li>
+        <li>
+          <a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink" class="active">
+            <i class="fas fa-gavel"></i> Peraturan
+          </a>
+        </li>
+        <li>
+          <a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink">
+            <i class="fas fa-user-tie"></i> Tambah Jaksa
+          </a>
+        </li>
       </ul>
     </aside>
 
@@ -43,47 +63,55 @@
       <h1>Kelola Peraturan Hukum</h1>
 
       <!-- Form Tambah Peraturan -->
-<!-- Form Tambah Peraturan -->
-<section class="data-section">
-  <h2>Tambah Peraturan Baru</h2>
-  <form id="formPeraturan" class="form-artikel">
+      <section class="data-section">
+        <h2>Tambah Peraturan Baru</h2>
+        <form id="formPeraturan" class="form-artikel">
+          <!-- Judul -->
+          <div class="form-group">
+            <label for="judul">Judul Peraturan / Kasus</label>
+            <input
+              type="text"
+              id="judul"
+              name="judul"
+              placeholder="Masukkan judul peraturan hukum"
+              required
+            >
+          </div>
 
-    <!-- 🟢 Judul (sesuai body API) -->
-    <div class="form-group">
-      <label for="judul">Judul Peraturan / Kasus</label>
-      <input type="text" id="judul" name="judul" placeholder="Masukkan judul peraturan hukum" required>
-    </div>
+          <!-- Isi Peraturan -->
+          <div id="peraturanContainer">
+            <div class="form-group peraturan-item">
+              <label for="isi1">Isi Peraturan</label>
+              <textarea
+                id="isi1"
+                name="isi[]"
+                rows="4"
+                placeholder="Masukkan isi peraturan..."
+                required
+              ></textarea>
+            </div>
+          </div>
 
-    <!-- 🟢 Isi (textarea multi peraturan tetap dipertahankan) -->
-    <div id="peraturanContainer">
-      <div class="form-group peraturan-item">
-        <label for="isi1">Isi Peraturan </label>
-        <textarea id="isi1" name="isi[]" rows="4" placeholder="Masukkan isi peraturan..." required></textarea>
-      </div>
-    </div>
+          <!-- Kategori -->
+          <div class="form-group">
+            <label for="kategori">Kategori Hukum</label>
+            <select id="kategori" name="kategori" required>
+              <option value="" disabled selected>Pilih Bidang Jaksa</option>
+              <option value="Pembinaan">Pembinaan</option>
+              <option value="Intelijen">Intelijen</option>
+              <option value="Pidana Umum">Pidana Umum</option>
+              <option value="Pidana Khusus">Pidana Khusus</option>
+              <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
+              <option value="Pidana Militer">Pidana Militer</option>
+              <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+            </select>
+          </div>
 
-    <!-- 🟢 Tambahan sesuai body API -->
-    <div class="form-group">
-    <label for="kategori">Kategori Hukum</label>
-    <select id="kategori" name="kategori" required>
-        <option value="" disabled selected>Pilih Bidang Jaksa</option>
-        <option value="Pembinaan">Pembinaan</option>
-        <option value="Intelijen">Intelijen</option>
-        <option value="Pidana Umum">Pidana Umum</option>
-        <option value="Pidana Khusus">Pidana Khusus</option>
-        <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
-        <option value="Pidana Militer">Pidana Militer</option>
-        <option value="Asisten Pengawasan">Asisten Pengawasan</option>
-    </select>
-    </div>
-
-
-    <button type="submit" class="btn-simpan">
-      <i class="fas fa-save"></i> Simpan Data
-    </button>
-  </form>
-</section>
-
+          <button type="submit" class="btn-simpan">
+            <i class="fas fa-save"></i> Simpan Data
+          </button>
+        </form>
+      </section>
 
       <!-- Daftar Peraturan -->
       <section class="data-section" style="margin-top: 2.5rem;">
@@ -98,7 +126,9 @@
             </tr>
           </thead>
           <tbody id="tabelPeraturanBody">
-            <tr><td colspan="4" style="text-align:center;">Belum ada data peraturan</td></tr>
+            <tr>
+              <td colspan="4" style="text-align:center;">Belum ada data peraturan</td>
+            </tr>
           </tbody>
         </table>
       </section>
@@ -109,8 +139,8 @@
   <footer class="admin-footer">
     <p>© 2025 EducLex | Peraturan Admin</p>
   </footer>
+
   <script src="/auth/fetch/logout.js"></script>
-
-
+  <!-- nanti kalau ada peraturanadmin.js tinggal ditambah di sini -->
 </body>
 </html>

@@ -7,8 +7,6 @@
 
   <link rel="stylesheet" href="../assets/style/auth/login.css">
 
-  <!-- Google Login Button (dipindahkan keluar dari HEAD, dimasukkan kembali ke BODY di bawah) -->
-
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
         rel="stylesheet">
@@ -31,7 +29,7 @@
 <main>
   <div class="auth-container">
 
-    <!-- Form Login Utama -->
+    <!-- ========== FORM LOGIN ========== -->
     <div id="login-form-container">
       <h1>Login</h1>
 
@@ -55,19 +53,19 @@
 
       <div class="divider"><span>atau</span></div>
 
-      <!-- Tombol Google Login (versi body, id tetap dipertahankan) -->
+      <!-- Tombol Google Login -->
       <button type="button" class="google-btn" id="googleLoginBtn">
         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
         Login dengan Google
       </button>
 
-      <!-- Tombol Google dari HEAD dipindahkan ke sini agar valid -->
+      <!-- Dummy button (tetap dipertahankan kalau dipakai di JS lama) -->
       <button id="googleLoginBtn2" style="display:none;">Login dengan Google</button>
 
       <p>Belum punya akun? <a href="/auth/regis.html" id="toRegister">Daftar</a></p>
     </div>
 
-    <!-- Form Lupa Password -->
+    <!-- ========== FORM LUPA PASSWORD (tidak dipakai, tapi tetap ada) ========== -->
     <div id="forgot-password-container" style="display:none;">
       <h2>Lupa Password</h2>
       <form id="forgotPasswordForm">
@@ -80,17 +78,32 @@
       <button id="back-to-login">Kembali ke Login</button>
     </div>
 
-    <!-- Form Reset Password -->
+    <!-- ========== FORM RESET PASSWORD (USERNAME + PASSWORD BARU) ========== -->
     <div id="reset-password-container" style="display:none;">
       <h2>Reset Password</h2>
       <form id="resetPasswordForm">
+        <!-- token lama (tidak terpakai, boleh dibiarkan kalau nanti dibutuhkan) -->
         <input type="hidden" id="resetToken">
 
+        <!-- 1. Username -->
+        <div class="input-group">
+          <input type="text" id="resetUsername" placeholder="Username" required>
+          <span class="icon">👤</span>
+        </div>
+
+        <!-- 2. OTP (opsional / disembunyikan, hanya untuk kompatibilitas dengan JS) -->
+        <div class="input-group" style="display:none;">
+          <input type="text" id="resetOtp" placeholder="Kode OTP (jika ada)">
+          <span class="icon">🔢</span>
+        </div>
+
+        <!-- 3. Password baru -->
         <div class="input-group">
           <input type="password" id="newPassword" placeholder="Password Baru" required>
           <span class="icon">🔑</span>
         </div>
 
+        <!-- 4. Konfirmasi password baru -->
         <div class="input-group">
           <input type="password" id="confirmNewPassword" placeholder="Konfirmasi Password Baru" required>
           <span class="icon">🔒</span>
@@ -103,7 +116,6 @@
 
   </div>
 </main>
-
 
 <!-- FOOTER -->
 <footer style="background-color:#5d4037; color:white; padding:40px 0; font-family:'Poppins', sans-serif;">
@@ -164,7 +176,6 @@
     Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
   </p>
 </footer>
-
 
 <!-- Login JS -->
 <script src="../auth/fetch/login.js"></script>

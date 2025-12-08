@@ -1,5 +1,4 @@
 // Fallback showAlert jika belum ada
-
 if (typeof showAlert !== "function") {
   function showAlert(message, type = "info") {
     const container = document.getElementById("alert-container");
@@ -29,6 +28,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetContainer = document.getElementById("reset-password-container");
   const resetPasswordForm = document.getElementById("resetPasswordForm");
   const backToForgotBtn = document.getElementById("back-to-forgot");
+
+  // ============================================
+  //  Helper: ambil role dari response / token
+  // ============================================
+  function extractRoleFromResponse(data, token) {
+    let role =
+      data.role ||
+      data.user?.role ||
+      data.data?.role ||
+      (Array.isArray(data.roles) ? data.roles[0] : null);
+
+    // Kalau backend taruh role di dalam JWT & tidak ada di body
+    if (!role && token && token.split(".").length === 3) {
+      try {
+        const payloadStr = atob(token.split(".")[1]);
+        const payload = JSON.parse(payloadStr);
+        role =
+          payload.role ||
+          payload.roles?.[0] ||
+          payload.authorities?.[0] ||
+          null;
+      } catch (e) {
+        console.warn("Gagal decode JWT untuk ambil role:", e);
+      }
+    }
+    return role || null;
+  }
+
+  function getRedirectByRole(role) {
+    if (!role) return "/index.html";
+    const r = role.toString().toLowerCase();
+
+    if (r === "admin") return "/admin/dashboard/dbadmin.html";
+    if (r === "jaksa" || r === "prosecutor") return "/jaksa/dashboard/dbjaksa.html";
+
+    // default user biasa
+    return "/index.html";
+  }
 
   // ============================================
   //  A. LOGIN USERNAME / PASSWORD
@@ -67,15 +104,29 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        // Anggap backend mengembalikan token
-        if (data.token) {
-          localStorage.setItem("token", data.token);
+        // Ambil token (support beberapa kemungkinan field)
+        const token =
+          data.token ||
+          data.access_token ||
+          data.data?.token ||
+          null;
+
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+
+        // Ambil role & simpan
+        const role = extractRoleFromResponse(data, token);
+        if (role) {
+          localStorage.setItem("role", role);
         }
 
         showAlert("Login berhasil!", "success");
 
+        const redirectUrl = getRedirectByRole(role);
+
         setTimeout(() => {
-          window.location.href = "/index.html";
+          window.location.href = redirectUrl;
         }, 800);
       } catch (err) {
         console.error("❌ FETCH ERROR LOGIN:", err);
@@ -86,14 +137,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ============================================
   //  B. LUPA PASSWORD → LANGSUNG KE HALAMAN RESET
+  //     (username + password baru + konfirmasi)
   // ============================================
   if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener("click", (e) => {
       e.preventDefault();
 
-      // sesuai permintaan: langsung halaman buat password baru
+      // langsung ke form reset (username + pwd baru)
       if (loginFormContainer) loginFormContainer.style.display = "none";
-      if (forgotContainer) forgotContainer.style.display = "none"; // form email tidak dipakai
+      if (forgotContainer) forgotContainer.style.display = "none";
       if (resetContainer) resetContainer.style.display = "block";
     });
   }
@@ -115,18 +167,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================================
-  //  C. SUBMIT RESET PASSWORD (OTP + PASSWORD BARU)
+  //  C. SUBMIT RESET PASSWORD
+  //     (username + password baru + konfirmasi)
   // ============================================
   if (resetPasswordForm) {
     resetPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const otp = document.getElementById("resetOtp")?.value.trim();
+      // otp tetap ada, tapi tidak diwajibkan lagi
+      const otp = document.getElementById("resetOtp")?.value?.trim() || "";
+
+      const usernameReset = document.getElementById("resetUsername")?.value.trim();
       const newPassword = document.getElementById("newPassword")?.value;
       const confirmNewPassword = document.getElementById("confirmNewPassword")?.value;
 
-      if (!otp || !newPassword || !confirmNewPassword) {
-        showAlert("Semua field wajib diisi!", "warning");
+      if (!usernameReset || !newPassword || !confirmNewPassword) {
+        showAlert("Username dan kedua kolom password wajib diisi!", "warning");
         return;
       }
 
@@ -147,8 +203,10 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            otp: otp,
+            username: usernameReset,
             new_password: newPassword,
+            // otp tetap dikirim kalau backend masih butuh (kalau kosong tidak apa-apa)
+            otp: otp || undefined,
           }),
         });
 
@@ -174,8 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }).then(() => {
           if (resetContainer) resetContainer.style.display = "none";
           if (loginFormContainer) loginFormContainer.style.display = "block";
-          // opsional: reload halaman login
-          // window.location.href = "/auth/login.html";
         });
       } catch (err) {
         console.error("❌ FETCH ERROR RESET PASSWORD:", err);
@@ -267,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (otpContainer) otpContainer.style.display = "block";
 
         showAlert("Kode OTP telah dikirim ke email Anda!", "success");
-
       } catch (err) {
         console.error("❌ FETCH ERROR REGISTER:", err);
         showAlert("Gagal terhubung ke server.", "error");
@@ -329,7 +384,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }).then(() => {
           window.location.href = "login.html"; // redirect ke login
         });
-
       } catch (err) {
         console.error("❌ FETCH ERROR VERIFY:", err);
         showAlert("Gagal terhubung ke server.", "error");
@@ -382,7 +436,6 @@ document.addEventListener("DOMContentLoaded", () => {
 // ============================================================
 // ⭐ GOOGLE REGISTER BUTTON (KODE LAMA – DIPERTAHANKAN)
 // ============================================================
-
 const googleRegisBtn = document.getElementById("googleRegisBtn");
 
 if (googleRegisBtn) {
@@ -395,9 +448,7 @@ if (googleRegisBtn) {
 // ============================================================
 // ⭐ HANDLE CALLBACK GOOGLE — FIX: OTP MUNCUL DULU
 // ============================================================
-
 (function () {
-
   const url = new URLSearchParams(window.location.search);
 
   const googleEmail = url.get("email");
@@ -416,16 +467,14 @@ if (googleRegisBtn) {
   // ============================================================
   // ⭐ 1. GOOGLE REGISTER MODE — WAJIB OTP & JANGAN LOGIN
   // ============================================================
-
   if (isGoogleRegister && googleEmail) {
-
     console.log("📌 GOOGLE REGISTER MODE. Email:", googleEmail);
 
     // Minta backend kirim OTP ke email Google
     fetch("http://localhost:8080/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: googleEmail })
+      body: JSON.stringify({ email: googleEmail }),
     });
 
     // Tampilkan form OTP
@@ -448,9 +497,7 @@ if (googleRegisBtn) {
   // ============================================================
   // ⭐ 2. GOOGLE LOGIN MODE — MASUK KE INDEX
   // ============================================================
-
   if (googleToken) {
-
     console.log("📌 GOOGLE LOGIN MODE. Token diterima");
 
     localStorage.setItem("token", googleToken);
@@ -463,19 +510,15 @@ if (googleRegisBtn) {
 
     return;
   }
-
 })();
 
 // ============================================================
 // ⭐ VERIFIKASI OTP GOOGLE REGISTER
 // ============================================================
-
 const verifyGoogleOtpBtn = document.getElementById("verifyGoogleOtpBtn");
 
 if (verifyGoogleOtpBtn) {
-
   verifyGoogleOtpBtn.addEventListener("click", () => {
-
     const email = localStorage.getItem("pendingGoogleEmail");
     const otp = document.getElementById("otpInput").value;
 
@@ -487,11 +530,10 @@ if (verifyGoogleOtpBtn) {
     fetch("http://localhost:8080/auth/verify-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email, otp: otp })
+      body: JSON.stringify({ email: email, otp: otp }),
     })
-      .then(res => res.json())
-      .then(data => {
-
+      .then((res) => res.json())
+      .then((data) => {
         console.log("📥 RESPONSE VERIFY:", data);
 
         if (data.error) {
@@ -510,6 +552,6 @@ if (verifyGoogleOtpBtn) {
           window.location.href = "../login.html";
         }, 900);
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
   });
 }
