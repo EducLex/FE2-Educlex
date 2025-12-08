@@ -1,5 +1,5 @@
 /* =========================
-   GLOBAL STYLE (same tone as artikeladmin & dbadmin)
+   GLOBAL STYLE
 ========================= */
 * {
   margin: 0;
@@ -119,7 +119,7 @@ body {
 }
 
 /* =========================
-   FORM ARTIKEL (digunakan untuk tulisan jaksa)
+   FORM TULISAN
 ========================= */
 .form-artikel {
   background: #fff;
@@ -152,6 +152,9 @@ body {
   transition: 0.25s;
   font-size: 16px;
   font-family: "Open Sans", sans-serif;
+}
+.form-group textarea {
+  min-height: 160px;
 }
 .form-group input:focus,
 .form-group textarea:focus {
