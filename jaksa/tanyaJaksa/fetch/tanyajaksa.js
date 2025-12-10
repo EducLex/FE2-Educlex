@@ -47,68 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ====================================
-  // Ambil jawaban terakhir dari Jaksa
-  // (untuk mode EDIT)
-  // ====================================
-  async function getLastJaksaAnswer(questionId) {
-    const token = localStorage.getItem("token");
-    const headers = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/questions/${questionId}/diskusi`, {
-        headers
-      });
-
-      const raw = await res.text();
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = raw;
-      }
-
-      let lastAnswer = "";
-
-      if (Array.isArray(data) && data.length > 0) {
-        // Cari diskusi dengan pengirim = Jaksa (case-insensitive)
-        const jaksaMessages = data.filter((d) => {
-          const sender = pickField(d, ["pengirim", "sender", "role"], "").toLowerCase();
-          return sender === "jaksa";
-        });
-
-        const target = jaksaMessages.length
-          ? jaksaMessages[jaksaMessages.length - 1]
-          : data[data.length - 1];
-
-        lastAnswer = pickField(
-          target,
-          ["pesan", "message", "isi", "content", "jawaban", "answer"],
-          ""
-        );
-      } else if (data && typeof data === "object") {
-        lastAnswer = pickField(
-          data,
-          ["pesan", "message", "isi", "content", "jawaban", "answer"],
-          ""
-        );
-      } else if (typeof data === "string") {
-        lastAnswer = data;
-      }
-
-      return lastAnswer;
-    } catch (err) {
-      console.error("❌ FETCH ERROR getLastJaksaAnswer:", err);
-      return "";
-    }
-  }
-
-  // ====================================
   // Buka modal Jawab / Edit
+  // (EDIT: pakai jawaban dari data, bukan GET /diskusi)
   // ====================================
-  async function openJawabanModal({ id, nama, isi, kategori, mode }) {
+  async function openJawabanModal({ id, nama, isi, kategori, mode, jawabanAwal }) {
     currentQuestionId = id;
     currentMode = mode || "jawab";
 
@@ -117,16 +59,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (modalKategori) modalKategori.textContent = kategori || "-";
 
     if (jawabanText) {
-      jawabanText.value = "";
-    }
-
-    // Kalau EDIT → isi textarea dengan jawaban Jaksa terakhir
-    if (currentMode === "edit" && jawabanText) {
-      jawabanText.placeholder = "Memuat jawaban sebelumnya...";
-      const previous = await getLastJaksaAnswer(id);
-      jawabanText.value = previous || "";
-      jawabanText.placeholder = "Ketik jawaban resmi sebagai Jaksa...";
-    } else if (jawabanText) {
+      if (currentMode === "edit") {
+        jawabanText.value = jawabanAwal || "";
+      } else {
+        jawabanText.value = "";
+      }
       jawabanText.placeholder = "Ketik jawaban resmi sebagai Jaksa...";
     }
 
@@ -154,8 +91,12 @@ document.addEventListener("DOMContentLoaded", () => {
         (status === "sudah" && answered);
 
       const nama = pickField(q, ["nama", "nama_penanya", "name", "username"]).toLowerCase();
-      const isi = pickField(q, ["isi", "pertanyaan", "question", "content", "deskripsi"]).toLowerCase();
-      const kategori = pickField(q, ["kategori", "bidang", "jenis"]).toLowerCase();
+      const isi = pickField(
+        q,
+        ["isi", "pertanyaan", "question", "content", "deskripsi"],
+        ""
+      ).toLowerCase();
+      const kategori = pickField(q, ["kategori", "bidang", "jenis"], "").toLowerCase();
 
       const matchSearch =
         !keyword ||
@@ -182,7 +123,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const id = q._id || q.id || q.question_id || "";
 
         const nama = pickField(q, ["nama", "nama_penanya", "name", "username"], "Anonim");
-        const isi = pickField(q, ["isi", "pertanyaan", "question", "content", "deskripsi"], "-");
+        const isi = pickField(
+          q,
+          ["isi", "pertanyaan", "question", "content", "deskripsi"],
+          "-"
+        );
         const kategori = pickField(q, ["kategori", "bidang", "jenis"], "-");
         const tanggalRaw = pickField(q, ["tanggal", "created_at", "createdAt"], "");
         const tanggal = tanggalRaw
@@ -194,10 +139,17 @@ document.addEventListener("DOMContentLoaded", () => {
           ? '<span class="badge answered">Dijawab</span>'
           : '<span class="badge pending">Belum Dijawab</span>';
 
-        // Aksi: Jawab, Edit, Hapus (Edit disabled kalau belum ada jawaban)
+        // jawaban terakhir (kalau disediakan BE)
+        const jawaban = pickField(
+          q,
+          ["jawaban", "answer", "respon", "response", "reply"],
+          ""
+        );
+
         const safeNama = nama.replace(/"/g, "&quot;");
         const safeIsi = isi.replace(/"/g, "&quot;");
         const safeKategori = kategori.replace(/"/g, "&quot;");
+        const safeJawaban = jawaban.replace(/"/g, "&quot;");
 
         const editButtonHtml = answered
           ? `
@@ -207,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
               data-nama="${safeNama}"
               data-isi="${safeIsi}"
               data-kategori="${safeKategori}"
+              data-jawaban="${safeJawaban}"
             >
               <i class="fas fa-pen"></i> Edit
             </button>
@@ -218,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
               data-nama="${safeNama}"
               data-isi="${safeIsi}"
               data-kategori="${safeKategori}"
+              data-jawaban="${safeJawaban}"
               disabled
               title="Belum ada jawaban untuk diedit"
             >
@@ -275,8 +229,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const nama = btn.getAttribute("data-nama") || "Anonim";
         const isi = btn.getAttribute("data-isi") || "-";
         const kategori = btn.getAttribute("data-kategori") || "-";
+        const jawaban = btn.getAttribute("data-jawaban") || "";
 
-        openJawabanModal({ id, nama, isi, kategori, mode: "edit" });
+        openJawabanModal({
+          id,
+          nama,
+          isi,
+          kategori,
+          mode: "edit",
+          jawabanAwal: jawaban,
+        });
       });
     });
 
@@ -294,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
           confirmButtonColor: "#d33",
           cancelButtonColor: "#6D4C41",
           confirmButtonText: "Ya, hapus",
-          cancelButtonText: "Batal"
+          cancelButtonText: "Batal",
         }).then((result) => {
           if (result.isConfirmed) {
             deleteQuestion(id);
@@ -380,7 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${API_BASE}/questions/${id}`, {
         method: "DELETE",
-        headers
+        headers,
       });
 
       const raw = await res.text();
@@ -393,7 +355,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) {
         console.error("❌ Error DELETE /questions/:id:", data);
-        Swal.fire("Gagal", data.error || data.message || "Tidak dapat menghapus pertanyaan.", "error");
+        Swal.fire(
+          "Gagal",
+          data.error || data.message || "Tidak dapat menghapus pertanyaan.",
+          "error"
+        );
         return;
       }
 
@@ -406,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ====================================
-  // POST /questions/:id/diskusi → kirim jawaban
+  // POST /questions/:id/diskusi
   // (dipakai untuk Jawab & Edit)
   // ====================================
   async function kirimJawaban() {
@@ -428,14 +394,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const payload = {
       pengirim: "Jaksa",
-      pesan: pesan
+      pesan: pesan,
     };
 
+    const url = `${API_BASE}/questions/${currentQuestionId}/diskusi`;
+    const method = "POST";
+
     try {
-      const res = await fetch(`${API_BASE}/questions/${currentQuestionId}/diskusi`, {
-        method: "POST",
+      const res = await fetch(url, {
+        method,
         headers,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const raw = await res.text();
@@ -447,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!res.ok) {
-        console.error("❌ Error POST /questions/:id/diskusi:", data);
+        console.error(`❌ Error POST /questions/:id/diskusi:`, data);
         Swal.fire("Gagal", data.error || data.message || "Gagal mengirim jawaban.", "error");
         return;
       }

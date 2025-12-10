@@ -92,18 +92,38 @@
             </div>
           </div>
 
-          <!-- Kategori -->
+          <!-- Jenis Peraturan (internal / eksternal) -->
           <div class="form-group">
-            <label for="kategori">Kategori Hukum</label>
-            <select id="kategori" name="kategori" required>
-              <option value="" disabled selected>Pilih Bidang Jaksa</option>
-              <option value="Pembinaan">Pembinaan</option>
-              <option value="Intelijen">Intelijen</option>
-              <option value="Pidana Umum">Pidana Umum</option>
-              <option value="Pidana Khusus">Pidana Khusus</option>
-              <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
-              <option value="Pidana Militer">Pidana Militer</option>
-              <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+            <label for="kategoriUtama">Jenis Peraturan</label>
+            <select id="kategoriUtama" name="kategoriUtama" required>
+              <option value="" disabled selected>Pilih Jenis Peraturan</option>
+              <option value="internal">Internal</option>
+              <option value="eksternal">Eksternal</option>
+            </select>
+          </div>
+
+          <!-- Subkategori / Bidang (opsional) -->
+          <div class="form-group">
+            <label for="kategoriDetail">Kategori Hukum (Bidang)</label>
+            <select id="kategoriDetail" name="kategoriDetail">
+              <option value="" selected>Tanpa subkategori</option>
+
+              <optgroup label="Internal (Bidang Jaksa)">
+                <option value="Pembinaan">Pembinaan</option>
+                <option value="Intelijen">Intelijen</option>
+                <option value="Pidana Umum">Pidana Umum</option>
+                <option value="Pidana Khusus">Pidana Khusus</option>
+                <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
+                <option value="Pidana Militer">Pidana Militer</option>
+                <option value="Pengawasan">Pengawasan</option>
+                <option value="Pemulihan Aset">Pemulihan Aset</option>
+              </optgroup>
+
+              <optgroup label="Eksternal (Peraturan Umum)">
+                <option value="Pidana">Pidana</option>
+                <option value="Perdata">Perdata</option>
+                <option value="Peraturan Lain">Peraturan Lain</option>
+              </optgroup>
             </select>
           </div>
 
@@ -140,7 +160,8 @@
     <p>© 2025 EducLex | Peraturan Admin</p>
   </footer>
 
+  <!-- Script -->
   <script src="/auth/fetch/logout.js"></script>
-  <!-- nanti kalau ada peraturanadmin.js tinggal ditambah di sini -->
+  <script src="/admin/peraturan/fetch/peraturanadmin.js"></script>
 </body>
 </html>

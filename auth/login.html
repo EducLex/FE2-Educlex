@@ -59,51 +59,55 @@
         Login dengan Google
       </button>
 
-      <!-- Dummy button (tetap dipertahankan kalau dipakai di JS lama) -->
+      <!-- Dummy button (tetap dipertahankan kalau dipakai di JS lain) -->
       <button id="googleLoginBtn2" style="display:none;">Login dengan Google</button>
 
       <p>Belum punya akun? <a href="/auth/regis.html" id="toRegister">Daftar</a></p>
     </div>
 
-    <!-- ========== FORM LUPA PASSWORD (tidak dipakai, tapi tetap ada) ========== -->
+    <!-- ========== FORM LUPA PASSWORD (STEP 1: EMAIL → KIRIM OTP) ========== -->
     <div id="forgot-password-container" style="display:none;">
       <h2>Lupa Password</h2>
+      <p style="font-size: 14px; margin-bottom: 10px;">
+        Masukkan email yang terdaftar, kami akan kirim kode OTP ke sana.
+      </p>
       <form id="forgotPasswordForm">
         <div class="input-group">
           <input type="email" id="forgotEmail" placeholder="Email Anda" required>
           <span class="icon">✉️</span>
         </div>
-        <button type="submit">Kirim Tautan Reset</button>
+        <!-- teks diubah: sekarang kirim OTP, bukan tautan -->
+        <button type="submit">Kirim Kode OTP</button>
       </form>
       <button id="back-to-login">Kembali ke Login</button>
     </div>
 
-    <!-- ========== FORM RESET PASSWORD (USERNAME + PASSWORD BARU) ========== -->
+    <!-- ========== FORM RESET PASSWORD (STEP 2: OTP + PASSWORD BARU) ========== -->
     <div id="reset-password-container" style="display:none;">
       <h2>Reset Password</h2>
+      <p style="font-size: 14px; margin-bottom: 10px;">
+        Masukkan kode OTP yang dikirim ke email, lalu buat password baru.
+      </p>
       <form id="resetPasswordForm">
-        <!-- token lama (tidak terpakai, boleh dibiarkan kalau nanti dibutuhkan) -->
+        <!-- token lama (tidak terpakai, boleh tetap ada) -->
         <input type="hidden" id="resetToken">
 
-        <!-- 1. Username -->
-        <div class="input-group">
-          <input type="text" id="resetUsername" placeholder="Username" required>
-          <span class="icon">👤</span>
-        </div>
+        <!-- EMAIL (DISIMPAN DARI STEP 1 – HIDDEN) -->
+        <input type="hidden" id="resetEmail">
 
-        <!-- 2. OTP (opsional / disembunyikan, hanya untuk kompatibilitas dengan JS) -->
-        <div class="input-group" style="display:none;">
-          <input type="text" id="resetOtp" placeholder="Kode OTP (jika ada)">
+        <!-- OTP SEKARANG DITAMPILKAN & DIPAKAI -->
+        <div class="input-group">
+          <input type="text" id="resetOtp" placeholder="Kode OTP" required>
           <span class="icon">🔢</span>
         </div>
 
-        <!-- 3. Password baru -->
+        <!-- PASSWORD BARU -->
         <div class="input-group">
           <input type="password" id="newPassword" placeholder="Password Baru" required>
           <span class="icon">🔑</span>
         </div>
 
-        <!-- 4. Konfirmasi password baru -->
+        <!-- KONFIRMASI PASSWORD BARU -->
         <div class="input-group">
           <input type="password" id="confirmNewPassword" placeholder="Konfirmasi Password Baru" required>
           <span class="icon">🔒</span>

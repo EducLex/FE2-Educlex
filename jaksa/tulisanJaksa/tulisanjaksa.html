@@ -6,7 +6,10 @@
   <title>EducLex - Tulisan Jaksa</title>
 
   <!-- Font & Style -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/assets/style/jaksa/tulisanjaksa.css" />
 
   <!-- SweetAlert -->
@@ -20,7 +23,11 @@
   />
 
   <!-- Favicon -->
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png" type="image/png" />
+  <link
+    rel="icon"
+    href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
+    type="image/png"
+  />
 </head>
 <body>
   <!-- Header -->
@@ -135,159 +142,6 @@
 
   <!-- Script Eksternal -->
   <script src="/auth/fetch/logout.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const tanggalInput = document.getElementById("tanggal");
-      const today = new Date().toISOString().split("T")[0];
-      tanggalInput.value = today;
-
-      loadTulisan();
-
-      const form = document.getElementById("formTulisan");
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const token = localStorage.getItem("token");
-        if (!token) {
-          Swal.fire("Error", "Anda belum login.", "error");
-          return;
-        }
-
-        const data = {
-          penulis: document.getElementById("penulis").value.trim(),
-          judul: document.getElementById("judul").value.trim(),
-          isi: document.getElementById("isi").value.trim(),
-          tanggal: document.getElementById("tanggal").value,
-        };
-
-        if (!data.penulis || !data.judul || !data.isi || !data.tanggal) {
-          Swal.fire("Peringatan", "Semua kolom wajib diisi.", "warning");
-          return;
-        }
-
-        try {
-          const res = await fetch("http://localhost:8080/tulisan", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + token,
-            },
-            body: JSON.stringify(data),
-          });
-
-          if (res.ok) {
-            Swal.fire("Berhasil!", "Tulisan berhasil disimpan.", "success");
-            form.reset();
-            tanggalInput.value = today;
-            loadTulisan();
-          } else {
-            const err = await res.json().catch(() => ({}));
-            Swal.fire(
-              "Gagal",
-              err.message || "Gagal menyimpan tulisan.",
-              "error"
-            );
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          Swal.fire("Error", "Gagal terhubung ke server.", "error");
-        }
-      });
-    });
-
-    async function loadTulisan() {
-      const token = localStorage.getItem("token");
-      const tbody = document.getElementById("tabelTulisanBody");
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>';
-
-      try {
-        const res = await fetch("http://localhost:8080/tulisan", {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
-
-        if (!res.ok) throw new Error("Gagal mengambil data");
-
-        const tulisanList = await res.json();
-        if (!Array.isArray(tulisanList))
-          throw new Error("Format data tidak valid");
-
-        if (tulisanList.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="4" style="text-align:center;">Belum ada tulisan.</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = tulisanList
-          .map(
-            (t) => `
-          <tr>
-            <td>${t.judul || "-"}</td>
-            <td>${t.penulis || "-"}</td>
-            <td>${
-              t.tanggal
-                ? new Date(t.tanggal).toLocaleDateString("id-ID")
-                : "-"
-            }</td>
-            <td>
-              <button class="btn-edit action-btn" data-id="${t.id}">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn-delete action-btn" data-id="${t.id}">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        `
-          )
-          .join("");
-
-        // Hapus tulisan
-        document.querySelectorAll(".btn-delete").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const id = btn.dataset.id;
-            const token = localStorage.getItem("token");
-
-            const confirmRes = await Swal.fire({
-              title: "Hapus Tulisan?",
-              text: "Aksi ini tidak bisa dikembalikan.",
-              icon: "warning",
-              showCancelButton: true,
-              confirmButtonText: "Ya, Hapus",
-              cancelButtonText: "Batal",
-              confirmButtonColor: "#d32f2f",
-              cancelButtonColor: "#6d4c41",
-            });
-
-            if (!confirmRes.isConfirmed) return;
-
-            try {
-              const res = await fetch(`http://localhost:8080/tulisan/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer " + token },
-              });
-
-              if (res.ok) {
-                Swal.fire("Dihapus!", "Tulisan berhasil dihapus.", "success");
-                loadTulisan();
-              } else {
-                Swal.fire("Gagal", "Tidak bisa menghapus tulisan.", "error");
-              }
-            } catch (err) {
-              Swal.fire("Error", "Gagal menghubungi server.", "error");
-            }
-          });
-        });
-
-        // (Opsional) nanti kalau mau fitur edit tinggal ditambah di sini
-      } catch (error) {
-        console.error("Load error:", error);
-        tbody.innerHTML =
-          '<tr><td colspan="4" style="text-align:center; color:#f44336;">Gagal memuat data</td></tr>';
-      }
-    }
-  </script>
+  <script src="/jaksa/tulisanJaksa/fetch/tulisanjaksa.js"></script>
 </body>
 </html>
