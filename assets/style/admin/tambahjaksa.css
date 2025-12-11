@@ -206,6 +206,120 @@ body{
 }
 .btn-delete:hover{ background:#d32f2f; }
 
+.btn-aksi {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-aksi i {
+  font-size: 0.8rem;
+}
+
+.btn-edit-jaksa {
+  background-color: #ffb300;
+  box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
+}
+
+.btn-edit-jaksa:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(255, 179, 0, 0.6);
+}
+
+.btn-delete-jaksa {
+  background-color: #e53935;
+  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+}
+
+.btn-delete-jaksa:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(229, 57, 53, 0.6);
+}
+
+
+.email-otp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.email-otp-row input[type="email"] {
+  flex: 1;
+}
+
+.btn-otp {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background-color: #6d4c41;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-otp:hover {
+  background-color: #4e342e;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.otp-input {
+  margin-top: 8px;
+}
+
+/* Tombol Edit / Delete di tabel */
+.btn-aksi {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-aksi i {
+  font-size: 0.8rem;
+}
+
+.btn-edit-jaksa {
+  background-color: #ffb300;
+  box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
+}
+
+.btn-edit-jaksa:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(255, 179, 0, 0.6);
+}
+
+.btn-delete-jaksa {
+  background-color: #e53935;
+  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+}
+
+.btn-delete-jaksa:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(229, 57, 53, 0.6);
+}
+
+
 /* FOOTER */
 .admin-footer{
   text-align:center;

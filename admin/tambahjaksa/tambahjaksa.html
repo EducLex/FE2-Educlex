@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EducLex - Tambah Jaksa</title>
 
   <!-- Font & Style -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style/admin/tambahjaksa.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/style/admin/tambahjaksa.css" />
 
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- Font Awesome (pakai CSS CDN biar nggak CORS) -->
+  <!-- Font Awesome -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -24,7 +24,7 @@
   <header class="admin-header">
     <div class="logo">EducLex</div>
     <div class="user-info">
-      <i class="fas fa-user-circle"></i> 
+      <i class="fas fa-user-circle"></i>
       <span id="adminName">Admin</span>
       <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
@@ -62,24 +62,41 @@
     <main class="main-content">
       <h1>Kelola Data Jaksa</h1>
 
-      <!-- Form Tambah Jaksa -->
+      <!-- Form Tambah / Edit Jaksa -->
       <section class="data-section">
         <h2>Tambah Jaksa Baru</h2>
         <form id="formJaksa" class="form-artikel">
-
           <div class="form-group">
             <label for="nama">Nama Jaksa</label>
-            <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap jaksa" required>
+            <input
+              type="text"
+              id="nama"
+              name="nama"
+              placeholder="Masukkan nama lengkap jaksa"
+              required
+            />
           </div>
 
           <div class="form-group">
             <label for="nip">NIP Jaksa</label>
-            <input type="text" id="nip" name="nip" placeholder="Masukkan NIP Jaksa" required>
+            <input
+              type="text"
+              id="nip"
+              name="nip"
+              placeholder="Masukkan NIP Jaksa (hanya angka)"
+              required
+            />
           </div>
 
           <div class="form-group">
             <label for="jabatan">Jabatan</label>
-            <input type="text" id="jabatan" name="jabatan" placeholder="Masukkan jabatan jaksa" required>
+            <input
+              type="text"
+              id="jabatan"
+              name="jabatan"
+              placeholder="Masukkan jabatan jaksa"
+              required
+            />
           </div>
 
           <!-- Dropdown Bidang -->
@@ -93,28 +110,57 @@
               <option value="Pidana Khusus">Pidana Khusus</option>
               <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
               <option value="Pidana Militer">Pidana Militer</option>
-              <option value="Asisten Pengawasan">Asisten Pengawasan</option>
+              <option value="Pengawasan">Pengawasan</option>
+              <option value="Pemulihan Aset">Pemulihan Aset</option>
             </select>
           </div>
 
+          <!-- Email (OTP dikirim otomatis setelah register) -->
           <div class="form-group">
             <label for="email">Email Jaksa</label>
-            <input type="email" id="email" name="email" placeholder="Masukkan email jaksa" required>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Masukkan email jaksa"
+              required
+            />
+            <small style="color:#6d4c41;">
+              Setelah data disimpan, kode OTP verifikasi akan otomatis dikirim ke email ini.
+            </small>
           </div>
 
           <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Masukkan password"
+              required
+            />
           </div>
 
           <div class="form-group">
             <label for="confirm_password">Konfirmasi Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" placeholder="Konfirmasi password" required>
+            <input
+              type="password"
+              id="confirm_password"
+              name="confirm_password"
+              placeholder="Konfirmasi password"
+              required
+            />
           </div>
 
           <div class="form-group">
             <label for="foto">Unggah Foto Jaksa</label>
-            <input type="file" id="foto" name="foto" accept="image/*" required>
+            <input
+              type="file"
+              id="foto"
+              name="foto"
+              accept="image/*"
+              required
+            />
           </div>
 
           <button type="submit" class="btn-simpan">
@@ -137,7 +183,11 @@
             </tr>
           </thead>
           <tbody id="tabelJaksaBody">
-            <tr><td colspan="5" style="text-align:center;">Belum ada data jaksa</td></tr>
+            <tr>
+              <td colspan="5" style="text-align:center;">
+                Belum ada data jaksa
+              </td>
+            </tr>
           </tbody>
         </table>
       </section>
