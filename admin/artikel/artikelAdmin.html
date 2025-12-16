@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EducLex - Artikel Admin</title>
 
   <!-- Font & Style -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style/admin/artikeladmin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/style/admin/artikeladmin.css" />
 
-    <!-- SweetAlert -->
+  <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- Font Awesome (CDN CSS, aman dari CORS) -->
+  <!-- Font Awesome -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     referrerpolicy="no-referrer"
   />
-
 </head>
 <body>
   <!-- Header -->
   <header class="admin-header">
     <div class="logo">EducLex</div>
     <div class="user-info">
-      <i class="fas fa-user-circle"></i> 
+      <i class="fas fa-user-circle"></i>
       <span id="adminName">Admin</span>
       <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
@@ -36,10 +35,26 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <ul>
-        <li><a href="/admin/dashboard/dbadmin.html" id="dashboardLink"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-<li><a href="/admin/artikel/artikeladmin.html" id="artikelLink" class="active"><i class="fas fa-file-alt"></i> Artikel</a></li>
-        <li><a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink"><i class="fas fa-gavel"></i> Peraturan</a></li>
-        <li><a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink"><i class="fas fa-user-tie"></i> Tambah Jaksa</a></li>
+        <li>
+          <a href="/admin/dashboard/dbadmin.html" id="dashboardLink">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin/artikel/artikeladmin.html" id="artikelLink" class="active">
+            <i class="fas fa-file-alt"></i> Artikel
+          </a>
+        </li>
+        <li>
+          <a href="/admin/peraturan/peraturanadmin.html" id="peraturanLink">
+            <i class="fas fa-gavel"></i> Peraturan
+          </a>
+        </li>
+        <li>
+          <a href="/admin/tambahjaksa/tambahjaksa.html" id="jaksaLink">
+            <i class="fas fa-user-tie"></i> Tambah Jaksa
+          </a>
+        </li>
       </ul>
     </aside>
 
@@ -47,50 +62,78 @@
     <main class="main-content">
       <h1>Kelola Artikel</h1>
 
-      <!-- Form Tambah Artikel -->
-<!-- Form Tambah Artikel -->
-<section class="data-section">
-  <h2>Tambah Artikel Baru</h2>
-  <form id="formArtikel" class="form-artikel" enctype="multipart/form-data">
-    
-    <div class="form-group">
-      <label for="judul">Judul Artikel</label>
-      <input type="text" id="judul" name="judul" placeholder="Masukkan judul artikel" required>
-    </div>
+      <!-- Form Tambah / Edit Artikel -->
+      <section class="data-section">
+        <h2>Tambah Artikel Baru</h2>
+        <form id="formArtikel" class="form-artikel" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="judul">Judul Artikel</label>
+            <input
+              type="text"
+              id="judul"
+              name="judul"
+              placeholder="Masukkan judul artikel"
+              required
+            />
+          </div>
 
-    <div class="form-group">
-      <label for="isi">Isi Artikel</label>
-      <textarea id="isi" name="isi" rows="8" placeholder="Tulis isi artikel di sini..." required></textarea>
-    </div>
+          <div class="form-group">
+            <label for="isi">Isi Artikel</label>
+            <textarea
+              id="isi"
+              name="isi"
+              rows="8"
+              placeholder="Tulis isi artikel di sini..."
+              required
+            ></textarea>
+          </div>
 
-    <!-- 🟢 Tambahan baru yg belum ada sebelumnya agar sesuai body -->
-    <div class="form-group">
-      <label for="penulis">Penulis</label>
-      <input type="text" id="penulis" name="penulis" placeholder="Masukkan nama penulis" required>
-    </div>
+          <div class="form-group">
+            <label for="penulis">Penulis</label>
+            <input
+              type="text"
+              id="penulis"
+              name="penulis"
+              placeholder="Masukkan nama penulis"
+              required
+            />
+          </div>
 
-    <!-- 🟢 Gambar kembali sebagai FILE upload -->
-    <div class="form-group">
-      <label for="gambar"> Gambar</label>
-      <input type="file" id="gambar" name="gambar" accept="image/*" required>
-    </div>
+          <div class="form-group">
+            <label for="dokumen">Dokumen (PDF / Doc) <span class="optional"></span></label>
+            <input
+              type="file"
+              id="dokumen"
+              name="dokumen"
+              accept=".pdf,.doc,.docx"
+            />
+          </div>
 
-    <!-- 🟢 Dokumen tetap FILE upload sesuai permintaan -->
-    <div class="form-group">
-      <label for="dokumen"> Dokumen (Opsional)</label>
-      <input type="file" id="dokumen" name="dokumen" accept=".pdf,.doc,.docx">
-    </div>
+          <div class="form-group">
+            <label for="jenisArtikel">Jenis Artikel</label>
+            <select id="jenisArtikel" name="jenis_artikel" required>
+              <option value="" disabled selected>Pilih jenis artikel</option>
+              <option value="internal">Internal (dalam Kejaksaan)</option>
+              <option value="eksternal">Eksternal (luar Kejaksaan)</option>
+            </select>
+          </div>
 
-    <!-- 🟢 Tambahan field categoryId -->
-    <div class="form-group">
-      <label for="categoryId">Category</label>
-      <input type="text" id="categoryId" name="categoryId" placeholder="Masukkan Category" required>
-    </div>
+          <div class="form-group">
+            <label for="kategoriArtikel">Kategori</label>
+            <select id="kategoriArtikel" name="categoryId" required>
+              <option value="" disabled selected>Pilih kategori / bidang artikel</option>
+              <!-- opsi akan diisi otomatis dari JS -->
+            </select>
+            <small class="hint-kategori">
+              Jika endpoint <code>/categories</code> aktif, daftar ini akan otomatis mengikuti data kategori di backend.
+            </small>
+          </div>
 
-    <button type="submit" class="btn-simpan"><i class="fas fa-save"></i> Simpan Artikel</button>
-  </form>
-</section>
-
+          <button type="submit" class="btn-simpan">
+            <i class="fas fa-save"></i> Simpan Artikel
+          </button>
+        </form>
+      </section>
 
       <!-- Daftar Artikel -->
       <section class="data-section" style="margin-top: 2.5rem;">
@@ -105,7 +148,9 @@
             </tr>
           </thead>
           <tbody id="tabelArtikelBody">
-            <tr><td colspan="4" style="text-align:center;">Belum ada artikel</td></tr>
+            <tr>
+              <td colspan="4" style="text-align:center;">Belum ada artikel</td>
+            </tr>
           </tbody>
         </table>
       </section>
@@ -117,9 +162,8 @@
     <p>© 2025 EducLex | Artikel Admin</p>
   </footer>
 
-  <!-- Script Simpan Artikel -->
-   <script src="/admin/artikel/fetch/artikeladmin.js"></script>
-   <script src="/auth/fetch/logout.js"></script>
-
+  <!-- Scripts -->
+  <script src="/admin/artikel/fetch/artikeladmin.js"></script>
+  <script src="/auth/fetch/logout.js"></script>
 </body>
 </html>

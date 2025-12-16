@@ -14,6 +14,7 @@ body{
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-weight: 600; /* sedikit bold biar mirip artikeladmin */
 }
 
 /* =========================
@@ -33,7 +34,10 @@ body{
   top:0;
   z-index:10;
 }
-.logo{ font-size:28px; font-weight:700; }
+.logo{
+  font-size:28px;
+  font-weight:700;
+}
 
 .user-info{
   display:flex;
@@ -104,19 +108,24 @@ body{
 }
 
 .data-section h2{
+  font-family:"Poppins","Segoe UI",sans-serif;
   font-size:22px;
   font-weight:700;
   margin-bottom:18px;
+  color:#5d4037;
 }
 
 /* =========================
-   FORM PERATURAN (mengikuti form-artikel style)
+   FORM PERATURAN
+   (card style mirip form-artikel)
 ========================= */
-.form-artikel{
-  background:#fff;
-  padding:25px;
-  border-radius:16px;
+.form-artikel,
+.form-peraturan{
+  background:#fff7f3;
+  padding:1.8rem 2rem;
+  border-radius:18px;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
+  border:1px solid #f1e0d7;
   display:flex;
   flex-direction:column;
   gap:18px;
@@ -127,55 +136,130 @@ body{
   display:flex;
   flex-direction:column;
   gap:6px;
+  margin-bottom:1.1rem;
 }
 
 .form-group label{
-  font-weight:600;
+  font-weight:700;
   color:#4e342e;
+  margin-bottom:0.35rem;
 }
 
+/* input/textarea/select form */
 .form-group input,
 .form-group textarea,
 .form-group select{
-  padding:12px;
-  border-radius:12px;
-  border:2px solid #d7ccc8;
+  padding:0.7rem 1rem;
+  border-radius:14px;
+  border:1.5px solid #d2b7a3;
   outline:none;
   transition:.25s;
-  font-size:16px;
+  font-size:0.9rem;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  color:#4d372e;
+  background-color:#fff;
+  box-sizing:border-box;
+  font-weight:600;
+}
+
+/* Textarea lebih kotak & bisa resize */
+.form-group textarea{
+  border-radius:16px;
+  resize:vertical;
+  min-height:120px;
+}
+
+/* Dropdown model pill + arrow custom (kayak artikeladmin) */
+.form-group select{
+  border-radius:999px;
+  cursor:pointer;
+  appearance:none;
+  -moz-appearance:none;
+  -webkit-appearance:none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6d4c41 50%),
+    linear-gradient(135deg, #6d4c41 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 13px) calc(50% - 3px);
+  background-size:7px 7px, 7px 7px;
+  background-repeat:no-repeat;
+}
+.form-group select::-ms-expand{
+  display:none;
+}
+
+/* Hover & focus state */
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover{
+  border-color:#c0906f;
+  background-color:#fffaf6;
 }
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus{
   border-color:#6d4c41;
+  box-shadow:0 0 0 3px rgba(109,76,65,.15);
+  background-color:#ffffff;
 }
 
-/* Buttons */
+/* Placeholder option */
+.form-group select option[disabled],
+.form-group select option[disabled][selected]{
+  color:#b9a298;
+}
+.form-group select:invalid{
+  color:#b9a298;
+}
+
+/* =========================
+   BUTTONS
+========================= */
 .btn-secondary{
   width:max-content;
   background:#ffb74d;
   padding:10px 18px;
-  border-radius:12px;
+  border-radius:999px;
   color:#4e342e;
-  font-weight:600;
+  font-weight:700;
   border:none;
   cursor:pointer;
   transition:.3s;
+  display:inline-flex;
+  align-items:center;
+  gap:0.3rem;
 }
-.btn-secondary:hover{ background:#ff9800; }
+.btn-secondary:hover{
+  background:#ff9800;
+  transform:translateY(-1px);
+  box-shadow:0 6px 12px rgba(255,152,0,0.3);
+}
 
 .btn-simpan{
   width:max-content;
   background:#6d4c41;
-  padding:10px 20px;
-  border-radius:12px;
+  padding:0.65rem 1.8rem;
+  border-radius:999px;
   color:white;
-  font-weight:600;
+  font-weight:700;
   border:none;
   cursor:pointer;
   transition:.3s;
+  display:inline-flex;
+  align-items:center;
+  gap:0.35rem;
+  box-shadow:0 6px 12px rgba(109,76,65,0.25);
 }
-.btn-simpan:hover{ background:#4e342e; }
+.btn-simpan:hover{
+  background:#4e342e;
+  transform:translateY(-1px);
+  box-shadow:0 8px 16px rgba(109,76,65,0.3);
+}
+.btn-simpan:active{
+  transform:translateY(1px);
+  box-shadow:0 4px 8px rgba(109,76,65,0.18);
+}
 
 /* =========================
    TABLE
@@ -184,27 +268,58 @@ body{
   width:100%;
   margin-top:16px;
   border-collapse:collapse;
-  background:#fff;
-  border-radius:16px;
+  background:#fffdfb;
+  border-radius:18px;
   overflow:hidden;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
   animation:fade .3s;
 }
 
 .data-table thead{
-  background:#6d4c41;
+  background:#f2e0d5;
   color:white;
+}
+
+.data-table thead th{
+  padding:0.8rem 1rem;
+  font-family:"Poppins","Segoe UI",sans-serif;
+  font-size:0.85rem;
+  font-weight:700;
+  color:#5d4037;
+  text-align:left;
 }
 
 .data-table th,
 .data-table td{
-  padding:12px 14px;
+  padding:0.75rem 1rem;
   text-align:left;
   border-bottom:1px solid #e7e2df;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  font-size:0.9rem;
+  font-weight:600;
+  color:#4d372e;
+}
+
+.data-table tbody tr:nth-child(even){
+  background:#fff8f3;
 }
 
 .data-table tbody tr:hover{
   background:#f0e7e3;
+}
+
+/* tombol aksi di tabel */
+.action-btn{
+  padding:6px 12px;
+  font-size:14px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  margin-right:6px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:0.25rem;
 }
 
 .btn-edit{
@@ -228,6 +343,7 @@ body{
   background:#5d4037;
   color:white;
   margin-top:auto;
+  font-weight:600;
 }
 
 /* RESPONSIVE */
@@ -240,8 +356,18 @@ body{
 
 @media(max-width:500px){
   .main-content{ padding:20px; }
-  .form-artikel{ padding:18px; }
-  .btn-simpan{ width:100%; text-align:center; }
+  .form-artikel,
+  .form-peraturan{ padding:18px; }
+  .btn-simpan{
+    width:100%;
+    text-align:center;
+    justify-content:center;
+  }
+  .admin-header{
+    flex-direction:column;
+    gap:8px;
+    padding:12px 20px;
+  }
 }
 
 /* Animasi smooth */

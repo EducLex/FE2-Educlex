@@ -330,6 +330,35 @@ body {
   object-fit: contain;
 }
 
+/* ==== FIX: ukuran ikon PDF di kartu artikel ==== */
+
+/* Ikon kecil di dalam kartu (list artikel) */
+.artikel-card .pdf-icon-img {
+  display: block;
+  width: 80px !important;      /* atur sesuai selera, 70–90px oke */
+  max-width: 80px !important;
+  height: auto !important;
+  margin: 24px auto 12px;      /* biar agak turun & center */
+  object-fit: contain;
+}
+
+/* Container ikon di bagian atas kartu, biar nggak “nempel” ke pinggir */
+.artikel-card .artikel-doc-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16px;
+  padding-bottom: 4px;
+}
+
+
+.artikel-card a.pdf-pill > img.pdf-icon-img {
+  width: 72px !important;
+  max-width: 72px !important;
+  height: auto !important;
+}
+
+
 /* Tombol Baca Selengkapnya */
 .btn-detail {
   margin-top: 4px;

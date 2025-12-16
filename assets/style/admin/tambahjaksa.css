@@ -14,6 +14,7 @@ body{
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-weight:600;
 }
 
 /* =========================
@@ -33,7 +34,10 @@ body{
   top:0;
   z-index:10;
 }
-.logo{ font-size:28px; font-weight:700; }
+.logo{
+  font-size:28px;
+  font-weight:700;
+}
 
 .user-info{
   display:flex;
@@ -107,16 +111,19 @@ body{
   font-size:22px;
   font-weight:700;
   margin-bottom:18px;
+  font-family:"Poppins","Segoe UI",sans-serif;
+  color:#5d4037;
 }
 
 /* =========================
-   FORM INPUT
+   FORM INPUT (pakai style card seperti artikel/peraturan)
 ========================= */
 .form-artikel{
-  background:#fff;
-  padding:25px;
-  border-radius:16px;
+  background:#fff7f3;
+  padding:1.8rem 2rem;
+  border-radius:18px;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
+  border:1px solid #f1e0d7;
   display:flex;
   flex-direction:column;
   gap:18px;
@@ -127,73 +134,191 @@ body{
   display:flex;
   flex-direction:column;
   gap:6px;
+  margin-bottom:1.1rem;
 }
 
 .form-group label{
-  font-weight:600;
+  font-weight:700;
   color:#4e342e;
+  margin-bottom:0.35rem;
 }
 
+/* Input / textarea / select */
 .form-group input,
 .form-group textarea,
 .form-group select{
-  padding:12px;
-  border-radius:12px;
-  border:2px solid #d7ccc8;
+  padding:0.7rem 1rem;
+  border-radius:14px;
+  border:1.5px solid #d2b7a3;
   outline:none;
   transition:.25s;
-  font-size:16px;
+  font-size:0.9rem;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  color:#4d372e;
+  background-color:#fff;
+  box-sizing:border-box;
+  font-weight:600;
+}
+
+/* Textarea */
+.form-group textarea{
+  border-radius:16px;
+  resize:vertical;
+  min-height:120px;
+}
+
+/* Select → pill + custom arrow */
+.form-group select{
+  border-radius:999px;
+  cursor:pointer;
+  appearance:none;
+  -moz-appearance:none;
+  -webkit-appearance:none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6d4c41 50%),
+    linear-gradient(135deg, #6d4c41 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 13px) calc(50% - 3px);
+  background-size:7px 7px, 7px 7px;
+  background-repeat:no-repeat;
+}
+.form-group select::-ms-expand{
+  display:none;
+}
+
+/* Hover & focus */
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover{
+  border-color:#c0906f;
+  background-color:#fffaf6;
 }
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus{
   border-color:#6d4c41;
+  box-shadow:0 0 0 3px rgba(109,76,65,.15);
+  background-color:#ffffff;
 }
 
-/* Button */
+/* Placeholder option */
+.form-group select option[disabled],
+.form-group select option[disabled][selected]{
+  color:#b9a298;
+}
+.form-group select:invalid{
+  color:#b9a298;
+}
+
+/* Email + tombol OTP sejajar */
+.email-otp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.email-otp-row input[type="email"] {
+  flex: 1;
+}
+
+.otp-input {
+  margin-top: 8px;
+}
+
+/* Tombol OTP */
+.btn-otp {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background-color: #6d4c41;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.btn-otp:hover {
+  background-color: #4e342e;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Button simpan utama */
 .btn-simpan{
   width:max-content;
   background:#6d4c41;
-  padding:10px 20px;
-  border-radius:12px;
+  padding:0.65rem 1.8rem;
+  border-radius:999px;
   color:white;
-  font-weight:600;
+  font-weight:700;
   border:none;
   cursor:pointer;
   transition:.3s;
+  display:inline-flex;
+  align-items:center;
+  gap:0.35rem;
+  box-shadow:0 6px 12px rgba(109,76,65,0.25);
 }
-.btn-simpan:hover{ background:#4e342e; }
+.btn-simpan:hover{
+  background:#4e342e;
+  transform:translateY(-1px);
+  box-shadow:0 8px 16px rgba(109,76,65,0.3);
+}
+.btn-simpan:active{
+  transform:translateY(1px);
+  box-shadow:0 4px 8px rgba(109,76,65,0.18);
+}
 
 /* =========================
-   TABLE
+   TABLE (match vibe artikel/peraturan)
 ========================= */
 .data-table{
   width:100%;
   margin-top:16px;
   border-collapse:collapse;
-  background:#fff;
-  border-radius:16px;
+  background:#fffdfb;
+  border-radius:18px;
   overflow:hidden;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
   animation:fade .3s;
 }
 
 .data-table thead{
-  background:#6d4c41;
+  background:#f2e0d5;
   color:white;
+}
+
+.data-table thead th{
+  padding:0.8rem 1rem;
+  font-family:"Poppins","Segoe UI",sans-serif;
+  font-size:0.85rem;
+  font-weight:700;
+  color:#5d4037;
+  text-align:left;
 }
 
 .data-table th,
 .data-table td{
-  padding:12px 14px;
+  padding:0.75rem 1rem;
   text-align:left;
   border-bottom:1px solid #e7e2df;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  font-size:0.9rem;
+  font-weight:600;
+  color:#4d372e;
+}
+
+.data-table tbody tr:nth-child(even){
+  background:#fff8f3;
 }
 
 .data-table tbody tr:hover{
   background:#f0e7e3;
 }
 
+/* Tombol lama (kalau masih dipakai di HTML) */
 .btn-edit{
   background:#ffb74d;
   color:#4e342e;
@@ -206,13 +331,14 @@ body{
 }
 .btn-delete:hover{ background:#d32f2f; }
 
+/* Tombol Edit / Delete di tabel (versi baru, non duplikat) */
 .btn-aksi {
   border: none;
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.8rem;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0 2px;
   display: inline-flex;
   align-items: center;
@@ -220,7 +346,6 @@ body{
   color: #fff;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
-
 .btn-aksi i {
   font-size: 0.8rem;
 }
@@ -229,7 +354,6 @@ body{
   background-color: #ffb300;
   box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
 }
-
 .btn-edit-jaksa:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(255, 179, 0, 0.6);
@@ -239,86 +363,10 @@ body{
   background-color: #e53935;
   box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
 }
-
 .btn-delete-jaksa:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(229, 57, 53, 0.6);
 }
-
-
-.email-otp-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.email-otp-row input[type="email"] {
-  flex: 1;
-}
-
-.btn-otp {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: none;
-  background-color: #6d4c41;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
-  white-space: nowrap;
-}
-
-.btn-otp:hover {
-  background-color: #4e342e;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-}
-
-.otp-input {
-  margin-top: 8px;
-}
-
-/* Tombol Edit / Delete di tabel */
-.btn-aksi {
-  border: none;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-weight: 600;
-  margin: 0 2px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #fff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-
-.btn-aksi i {
-  font-size: 0.8rem;
-}
-
-.btn-edit-jaksa {
-  background-color: #ffb300;
-  box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
-}
-
-.btn-edit-jaksa:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(255, 179, 0, 0.6);
-}
-
-.btn-delete-jaksa {
-  background-color: #e53935;
-  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
-}
-
-.btn-delete-jaksa:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(229, 57, 53, 0.6);
-}
-
 
 /* FOOTER */
 .admin-footer{
@@ -327,6 +375,7 @@ body{
   background:#5d4037;
   color:white;
   margin-top:auto;
+  font-weight:600;
 }
 
 /* RESPONSIVE */
@@ -340,7 +389,16 @@ body{
 @media(max-width:500px){
   .main-content{ padding:20px; }
   .form-artikel{ padding:18px; }
-  .btn-simpan{ width:100%; text-align:center; }
+  .btn-simpan{
+    width:100%;
+    justify-content:center;
+    text-align:center;
+  }
+  .admin-header{
+    flex-direction:column;
+    gap:8px;
+    padding:12px 20px;
+  }
 }
 
 /* Animasi smooth */

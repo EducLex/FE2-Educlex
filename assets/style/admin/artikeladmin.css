@@ -14,6 +14,7 @@ body{
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-weight: 600;               /* semua teks default jadi bold */
 }
 
 /* =========================
@@ -66,25 +67,8 @@ body{
 }
 
 /* =========================
-   SIDEBAR  (disamakan dengan dbadmin)
+   SIDEBAR (disamakan dengan dbadmin)
 ========================= */
-.sidebar a{
-  text-decoration:none;
-  color:#4e342e;
-  padding:12px 14px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:600;
-  border-radius:12px;
-  transition:.3s;
-}
-.sidebar a:hover,
-.sidebar a.active{
-  background:#d7ccc8;
-}
-
-
 .sidebar{
   width:240px;
   background:#fff8f0;
@@ -95,7 +79,8 @@ body{
 .sidebar ul{ list-style:none; }
 .sidebar ul li{ margin-bottom:16px; }
 
-/* ikon + teks di satu baris */
+/* semua link di sidebar */
+.sidebar a,
 .sidebar ul li a{
   text-decoration:none;
   color:#4e342e;
@@ -108,7 +93,8 @@ body{
   transition:0.3s;
 }
 
-/* hover + menu aktif */
+.sidebar a:hover,
+.sidebar a.active,
 .sidebar ul li a:hover,
 .sidebar ul li a.active{
   background:#d7ccc8;
@@ -127,20 +113,24 @@ body{
   margin-bottom:22px;
 }
 
+/* judul section */
 .data-section h2{
+  font-family:"Poppins","Segoe UI",sans-serif;
   font-size:22px;
   font-weight:700;
   margin-bottom:18px;
+  color:#5d4037;
 }
 
 /* =========================
    FORM ARTIKEL
 ========================= */
 .form-artikel{
-  background:#fff;
-  padding:25px;
-  border-radius:16px;
+  background:#fff7f3;
+  padding:1.8rem 2rem;
+  border-radius:18px;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
+  border:1px solid #f1e0d7;
   display:flex;
   flex-direction:column;
   gap:18px;
@@ -153,11 +143,28 @@ body{
   gap:6px;
 }
 
+/* label umum */
 .form-group label{
-  font-weight:600;
+  font-weight:700;
   color:#4e342e;
 }
 
+/* label khusus dalam form-artikel (supaya konsisten font) */
+.form-artikel .form-group label {
+  display:block;
+  margin-bottom:0.45rem;
+  font-family:"Poppins","Segoe UI",sans-serif;
+  font-size:0.9rem;
+  font-weight:700;
+  color:#6d4c41;
+}
+
+/* kelompok field dalam form-artikel */
+.form-artikel .form-group {
+  margin-bottom:1.2rem;
+}
+
+/* input & textarea dasar */
 .form-group input,
 .form-group textarea{
   padding:12px;
@@ -166,25 +173,130 @@ body{
   outline:none;
   transition:.25s;
   font-size:16px;
-}
-.form-group input:focus,
-.form-group textarea:focus{
-  border-color:#6d4c41;
+  font-weight:600;
 }
 
-/* Button */
-.btn-simpan{
+/* styling khusus untuk input/textarea/select di form-artikel */
+.form-artikel input[type="text"],
+.form-artikel textarea,
+.form-artikel select {
+  width:100%;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  font-size:0.9rem;
+  color:#4d372e;
+  padding:0.7rem 1rem;
+  border-radius:14px;
+  border:1.5px solid #d2b7a3;
+  background-color:#fff;
+  outline:none;
+  box-sizing:border-box;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.1s ease;
+  font-weight:600;
+}
+
+/* Textarea di form-artikel agak kotak */
+.form-artikel textarea {
+  border-radius:16px;
+  resize:vertical;
+  min-height:120px;
+}
+
+/* Dropdown pill style (mirip peraturanadmin) */
+.form-artikel select {
+  border-radius:999px;
+  cursor:pointer;
+  appearance:none;
+  -moz-appearance:none;
+  -webkit-appearance:none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6d4c41 50%),
+    linear-gradient(135deg, #6d4c41 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 13px) calc(50% - 3px);
+  background-size:7px 7px, 7px 7px;
+  background-repeat:no-repeat;
+}
+
+/* Arrow default IE */
+.form-artikel select::-ms-expand {
+  display:none;
+}
+
+/* Hover state */
+.form-artikel input[type="text"]:hover,
+.form-artikel textarea:hover,
+.form-artikel select:hover {
+  border-color:#c0906f;
+  background-color:#fffaf6;
+}
+
+/* Focus state */
+.form-artikel input[type="text"]:focus,
+.form-artikel textarea:focus,
+.form-artikel select:focus {
+  border-color:#6d4c41;
+  box-shadow:0 0 0 3px rgba(109, 76, 65, 0.15);
+  background-color:#ffffff;
+}
+
+/* Hint kecil di bawah kategori */
+.form-artikel .hint-kategori {
+  display:block;
+  margin-top:0.35rem;
+  font-size:0.78rem;
+  color:#8c6b5c;
+  font-weight:600;
+}
+
+/* Placeholder / option pertama */
+.form-artikel select option[disabled],
+.form-artikel select option[disabled][selected] {
+  color:#b9a298;
+}
+
+/* Kalau pakai required + option kosong, kelihatan abu */
+.form-artikel select:invalid {
+  color:#b9a298;
+}
+
+/* Button Simpan (override lama) */
+.btn-simpan,
+.form-artikel .btn-simpan{
   width:max-content;
   background:#6d4c41;
-  padding:10px 20px;
-  border-radius:12px;
+  padding:0.65rem 1.8rem;
+  border-radius:999px;
   color:white;
-  font-weight:600;
+  font-weight:700;
   border:none;
   cursor:pointer;
-  transition:.3s;
+  display:inline-flex;
+  align-items:center;
+  gap:0.35rem;
+  box-shadow:0 6px 12px rgba(109, 76, 65, 0.25);
+  transition:
+    background-color 0.18s ease,
+    transform 0.1s ease,
+    box-shadow 0.18s ease;
 }
-.btn-simpan:hover{ background:#4e342e; }
+
+.btn-simpan:hover,
+.form-artikel .btn-simpan:hover{
+  background:#5b3c32;
+  transform:translateY(-1px);
+  box-shadow:0 8px 16px rgba(109, 76, 65, 0.3);
+}
+
+.btn-simpan:active,
+.form-artikel .btn-simpan:active{
+  transform:translateY(1px);
+  box-shadow:0 4px 8px rgba(109, 76, 65, 0.2);
+}
 
 /* =========================
    TABLE
@@ -193,51 +305,73 @@ body{
   width:100%;
   margin-top:16px;
   border-collapse:collapse;
-  background:#fff;
-  border-radius:16px;
+  background:#fffdfb;
+  border-radius:18px;
   overflow:hidden;
   box-shadow:0 10px 28px rgba(0,0,0,.12);
   animation:fade .3s;
 }
 
 .data-table thead{
-  background:#6d4c41;
-  color:white;
+  background:#f2e0d5;
+  color:#5d4037;
 }
 
+.data-table thead th{
+  padding:0.8rem 1rem;
+  font-family:"Poppins","Segoe UI",sans-serif;
+  font-size:0.85rem;
+  font-weight:700;
+  text-align:left;
+}
+
+/* sel umum */
 .data-table th,
 .data-table td{
-  padding:12px 14px;
+  padding:0.75rem 1rem;
   text-align:left;
   border-bottom:1px solid #e7e2df;
+  font-family:"Open Sans","Segoe UI",sans-serif;
+  font-size:0.9rem;
+  font-weight:600;
+  color:#4d372e;
+}
+
+.data-table tbody tr:nth-child(even){
+  background:#fff8f3;
 }
 
 .data-table tbody tr:hover{
   background:#f0e7e3;
 }
 
-.action-btn{
+/* Tombol aksi di tabel */
+.data-table .action-btn{
   padding:6px 12px;
   font-size:14px;
   border:none;
   border-radius:8px;
   cursor:pointer;
   margin-right:6px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:0.25rem;
 }
 
-.btn-edit{
+.data-table .btn-edit{
   background:#ffb74d;
   color:#4e342e;
 }
-.btn-edit:hover{
+.data-table .btn-edit:hover{
   background:#ff9800;
 }
 
-.btn-delete{
+.data-table .btn-delete{
   background:#e57373;
   color:white;
 }
-.btn-delete:hover{
+.data-table .btn-delete:hover{
   background:#d32f2f;
 }
 
@@ -250,6 +384,7 @@ body{
   background:#5d4037;
   color:white;
   margin-top:auto;
+  font-weight:600;
 }
 
 /* =========================

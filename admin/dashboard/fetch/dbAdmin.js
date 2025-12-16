@@ -1,6 +1,6 @@
 // /admin/dashboard/assets/js/dbadmin.js
 
-// Fallback kecil kalau SweetAlert belum ada
+// Fallback kalau SweetAlert belum ada
 if (typeof Swal === "undefined") {
   window.Swal = {
     fire: (title, text, icon) => {
@@ -11,6 +11,9 @@ if (typeof Swal === "undefined") {
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "http://localhost:8080";
+
+  const DASHBOARD_URL = `${API_BASE}/dashboard`;
+  const UPDATE_ROLE_URL = `${API_BASE}/auth/update-role`;
 
   // Elemen statistik
   const totalArtikelEl = document.getElementById("totalArtikel");
@@ -46,22 +49,28 @@ document.addEventListener("DOMContentLoaded", () => {
     return fallback;
   }
 
-  function findUserList(data) {
-    if (!data || typeof data !== "object") return null;
-    const candidateKeys = [
-      "users",
-      "pengguna",
-      "latest_users",
-      "recent_users",
-      "data",
-      "items",
-    ];
-    for (const key of candidateKeys) {
-      if (Array.isArray(data[key])) {
-        return data[key];
-      }
+  // Kalau respons dibungkus { data: {...} } kita ambil data-nya
+  function extractPayload(raw) {
+    if (!raw || typeof raw !== "object") return {};
+    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+      return raw.data;
     }
-    return null;
+    return raw;
+  }
+
+  function getTokenOrRedirect() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      Swal.fire(
+        "Harus login",
+        "Silakan login sebagai admin terlebih dahulu.",
+        "warning"
+      ).then(() => {
+        window.location.href = "/auth/login.html";
+      });
+      return null;
+    }
+    return token;
   }
 
   // ============================
@@ -80,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "totalPeraturan",
       "peraturanCount",
       "regulationsCount",
-      "regulations",
+      "peraturan",
     ]);
     const totalUser = pickCount(data, [
       "total_user",
@@ -88,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "userCount",
       "usersCount",
       "users",
-      "pengguna",
     ]);
     const totalJaksa = pickCount(data, [
       "total_jaksa",
@@ -104,14 +112,78 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
+  // UPDATE ROLE USER
+  // ============================
+  async function updateUserRole(userId, newRole) {
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
+    try {
+      const res = await fetch(UPDATE_ROLE_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          // sesuai curl backend: token langsung, TANPA "Bearer "
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          role: newRole,
+        }),
+      });
+
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { message: raw };
+      }
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          await Swal.fire(
+            "Gagal mengubah role",
+            data.error || data.message || "Invalid or expired token",
+            "error"
+          );
+          localStorage.removeItem("token");
+          window.location.href = "/auth/login.html";
+          return;
+        }
+
+        await Swal.fire(
+          "Gagal mengubah role",
+          data.error || data.message || "Terjadi kesalahan pada server.",
+          "error"
+        );
+        return;
+      }
+
+      await Swal.fire(
+        "Berhasil",
+        data.message || "Role pengguna berhasil diperbarui.",
+        "success"
+      );
+
+      loadUsers(); // refresh tabel + otomatis hitung ulang total jaksa
+    } catch (err) {
+      console.warn("Gagal PUT /auth/update-role:", err);
+      Swal.fire(
+        "Koneksi gagal",
+        "Tidak dapat terhubung ke server. Coba beberapa saat lagi.",
+        "error"
+      );
+    }
+  }
+
+  // ============================
   // Render tabel user
   // ============================
-  function renderUsers(data) {
+  function renderUsers(list) {
     if (!userTableBody) return;
 
-    const users = findUserList(data);
-
-    if (!users || users.length === 0) {
+    if (!Array.isArray(list) || list.length === 0) {
       userTableBody.innerHTML = `
         <tr>
           <td colspan="4" style="text-align:center; color:#6d4c41;">
@@ -119,54 +191,113 @@ document.addEventListener("DOMContentLoaded", () => {
           </td>
         </tr>
       `;
+      // kalau kosong, total jaksa pasti 0
+      if (totalJaksaEl) totalJaksaEl.textContent = "0";
       return;
     }
 
-    userTableBody.innerHTML = users
+    const allowedRoles = ["user", "jaksa", "admin"];
+
+    // 🔥 Tambahan: hitung berapa user yang role-nya "jaksa"
+    const jaksaCount = list.filter((u) => {
+      const role = pickField(u, ["role", "jabatan", "tipe"], "")
+        .toLowerCase()
+        .trim();
+      return role === "jaksa";
+    }).length;
+    if (totalJaksaEl) {
+      totalJaksaEl.textContent = String(jaksaCount);
+    }
+    // 🔥 (end tambahan)
+
+    userTableBody.innerHTML = list
       .map((u) => {
-        const nama = pickField(u, ["nama", "name", "full_name", "username"], "-");
+        const id = u._id || u.id || u.user_id || u.uid || "";
+        const nama = pickField(
+          u,
+          ["nama", "name", "full_name", "username"],
+          "-"
+        );
         const email = pickField(u, ["email", "mail"], "-");
-        const role = pickField(u, ["role", "jabatan", "tipe"], "-");
+        const role = pickField(u, ["role", "jabatan", "tipe"], "user");
+
+        const optionsHtml = allowedRoles
+          .map(
+            (r) =>
+              `<option value="${r}" ${
+                r === role ? "selected" : ""
+              }>${r}</option>`
+          )
+          .join("");
 
         return `
-          <tr>
+          <tr data-id="${id}">
             <td>${nama}</td>
             <td>${email}</td>
-            <td>${role}</td>
             <td>
-              <button class="action-btn btn-view" type="button" disabled>
-                Detail
-              </button>
+              <span class="role-label">${role}</span>
+            </td>
+            <td>
+              <div class="user-actions">
+                <select class="role-select" data-id="${id}">
+                  ${optionsHtml}
+                </select>
+                <button
+                  class="action-btn btn-update-role"
+                  type="button"
+                  data-id="${id}"
+                >
+                  Ubah Role
+                </button>
+              </div>
             </td>
           </tr>
         `;
       })
       .join("");
+
+    // Event handler tombol Ubah Role
+    userTableBody.querySelectorAll(".btn-update-role").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const userId = btn.getAttribute("data-id");
+        const row = btn.closest("tr");
+        if (!row || !userId) return;
+
+        const select = row.querySelector(".role-select");
+        if (!select) return;
+
+        const newRole = select.value;
+
+        Swal.fire({
+          title: "Ubah role pengguna?",
+          text: `Role akan diubah menjadi "${newRole}".`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#4CAF50",
+          cancelButtonColor: "#6d4c41",
+          confirmButtonText: "Ya, ubah",
+          cancelButtonText: "Batal",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            updateUserRole(userId, newRole);
+          }
+        });
+      });
+    });
   }
 
   // ============================
-  // Fetch dashboard
+  // Fetch dashboard (statistik)
   // ============================
   async function loadDashboard() {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      Swal.fire(
-        "Harus login",
-        "Silakan login sebagai admin terlebih dahulu.",
-        "warning"
-      ).then(() => {
-        window.location.href = "/auth/login.html";
-      });
-      return;
-    }
+    const token = getTokenOrRedirect();
+    if (!token) return;
 
     try {
-      const res = await fetch(`${API_BASE}/dashboard`, {
+      const res = await fetch(DASHBOARD_URL, {
         method: "GET",
         headers: {
-          // ⚠️ SESUAI DENGAN CURL: TANPA "Bearer "
-          Authorization: token,
+          Authorization: token, // tanpa Bearer, sesuai backend kamu
         },
       });
 
@@ -179,21 +310,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!res.ok) {
-        // Khusus 401 → token invalid / expired
         if (res.status === 401) {
           Swal.fire(
             "Gagal memuat dashboard",
             data.error || data.message || "Invalid or expired token",
             "error"
           ).then(() => {
-            // hapus token lalu paksa login ulang
             localStorage.removeItem("token");
             window.location.href = "/auth/login.html";
           });
           return;
         }
 
-        // Error lain (500, dsb)
         Swal.fire(
           "Gagal memuat dashboard",
           data.error || data.message || "Terjadi kesalahan pada server.",
@@ -202,11 +330,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Kalau sukses, isi statistik & user
-      renderStats(data);
-      renderUsers(data);
+      const payload = extractPayload(data);
+      console.log("🔍 DEBUG dashboard payload:", payload);
+
+      renderStats(payload);
     } catch (err) {
-      // Jangan pakai console.error biar nggak merah-merah di console
       console.warn("Gagal fetch /dashboard:", err);
       Swal.fire(
         "Koneksi gagal",
@@ -217,7 +345,83 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
+  // Fetch list user (cari endpoint yang benar)
+  // ============================
+  async function loadUsers() {
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
+    if (userTableBody) {
+      userTableBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center; color:#6d4c41;">
+            Memuat data pengguna...
+          </td>
+        </tr>
+      `;
+    }
+
+    // beberapa kemungkinan endpoint list user
+    const candidates = [
+      "/auth/users",
+      "/auth/all-users",
+      "/auth/list-users",
+      "/auth/get-users",
+      "/users",
+    ];
+
+    for (const path of candidates) {
+      try {
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+        });
+
+        const raw = await res.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = {};
+        }
+
+        if (!res.ok) {
+          // jangan spam console, cukup lanjut coba endpoint lain
+          continue;
+        }
+
+        // backend bisa balikin: [ {...} ] atau { data: [ {...} ] } atau { users: [ {...} ] }
+        let list = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (Array.isArray(data.data)) {
+          list = data.data;
+        } else if (Array.isArray(data.users)) {
+          list = data.users;
+        }
+
+        if (list.length > 0) {
+          console.log("✅ User list loaded from:", path, list);
+          renderUsers(list); // di sini totalJaksa juga ikut diupdate
+          return;
+        }
+      } catch (err) {
+        // network error → coba endpoint lain
+        continue;
+      }
+    }
+
+    // kalau semua endpoint gagal / tidak ada
+    console.log("ℹ️ Tidak menemukan endpoint list user yang cocok.");
+    renderUsers([]);
+  }
+
+  // ============================
   // Initial load
   // ============================
   loadDashboard();
+  loadUsers();
 });

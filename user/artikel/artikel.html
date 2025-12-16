@@ -35,7 +35,7 @@
 </header>
 
 
-<main class="artikel-container">
+<main class="artikel-container artikel-page">
 
   <h1>Artikel Hukum Populer</h1>
   <p style="margin-bottom:20px;">Kumpulan artikel edukatif seputar hukum untuk remaja & masyarakat.</p>
@@ -62,14 +62,14 @@
 </main>
 
 <!-- Modal Detail Artikel -->
-<div id="artikelModal" class="modal">
-<div class="modal-content">
-  <span class="close">&times;</span>
-  <h2 id="modalTitle"></h2>
-  <img id="modalImage">
-  <p id="modalContent"></p>
-  <div id="modalFile"></div>
-</div>
+<div id="artikelModal" class="modal artikel-modal">
+  <div class="modal-content artikel-modal-content">
+    <span class="close">&times;</span>
+    <h2 id="modalTitle"></h2>
+    <img id="modalImage" alt="" />
+    <p id="modalContent" class="modal-body-text"></p>
+    <div id="modalFile" class="modal-doc-container"></div>
+  </div>
 </div>
 
 <!-- Footer -->
@@ -125,6 +125,6 @@
 <script src="/user/artikel/fetch/artikel.js"></script>
 
 <!-- ✅ Logout Handler -->
-  <script src="/auth/fetch/logout.js"></script>
+<script src="/auth/fetch/logout.js"></script>
 </body>
 </html>

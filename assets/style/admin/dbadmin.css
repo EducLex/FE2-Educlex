@@ -175,6 +175,26 @@ body{
   background:#f6eee9;
 }
 
+/* ====== TABEL USER – AKSI & SELECT ROLE ====== */
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+/* dropdown role */
+.user-actions .role-select {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #d7b89a;
+  background: #fff7f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #5d4037
+}
+
 /* =========================
    FOOTER
 ========================= */

@@ -13,6 +13,7 @@ function showAlert(message, type = "info") {
     warning: "warning",
     info: "info",
   };
+
   if (typeof Swal !== "undefined") {
     Swal.fire({
       icon: iconMap[type] || "info",
@@ -61,24 +62,41 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.getItem("jaksaName") ||
     localStorage.getItem("username") ||
     localStorage.getItem("name");
+
   if (jaksaNameEl && storedName) {
     jaksaNameEl.textContent = storedName;
   }
 
-  // Elemen DOM yang dipakai
+  // Elemen kartu statistik
   const totalBelumDijawabEl = document.getElementById("totalBelumDijawab");
   const totalTerjawabEl = document.getElementById("totalTerjawab");
   const totalTulisanJaksaEl = document.getElementById("totalTulisanJaksa");
 
-  const tanyaTableBody = document.getElementById("tanyaTableBody");
+  // Tabel tulisan jaksa
   const tulisanTableBody = document.getElementById("tulisanTableBody");
 
+  // Elemen lama (tetap dipertahankan supaya tidak error kalau dipakai nanti)
   const formJawabanContainer = document.getElementById("formJawabanJaksa");
   const jawabanForm = document.getElementById("jawabanForm");
   const jawabanText = document.getElementById("jawabanText");
   const batalJawabBtn = document.getElementById("batalJawab");
 
   let pertanyaanTerpilih = null; // simpan pertanyaan yang sedang dijawab
+  let tulisanCache = []; // cache tulisan, buat fallback hitung jumlah
+
+  // ========================================================
+  // UTIL: FORMAT TANGGAL
+  // ========================================================
+  function formatTanggalId(raw) {
+    if (!raw) return "-";
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
 
   // ========================================================
   // LOAD STATISTIK DASHBOARD
@@ -98,19 +116,31 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("📊 PARSED DASHBOARD STATS:", data);
 
       if (!res.ok) {
-        showAlert("Gagal memuat statistik dashboard.", "error");
+        console.warn("Dashboard stats tidak OK, akan pakai fallback jika ada.");
         return;
       }
 
       // fleksibel dengan berbagai bentuk response
       const stats =
-        data && typeof data === "object" && data.data && typeof data.data === "object"
+        data &&
+        typeof data === "object" &&
+        data.data &&
+        typeof data.data === "object"
           ? data.data
-          : data;
+          : data || {};
+
+      // backend kamu kirim: { jaksa_count, questions, tulisan, unanswered_questions }
+      const totalQuestions =
+        stats.totalPertanyaan ??
+        stats.questions ??
+        stats.total_questions ??
+        stats.jumlah_pertanyaan ??
+        0;
 
       const belum =
         stats.totalBelumDijawab ??
         stats.belum_dijawab ??
+        stats.unanswered_questions ??
         stats.unanswered ??
         0;
 
@@ -118,17 +148,18 @@ document.addEventListener("DOMContentLoaded", () => {
         stats.totalTerjawab ??
         stats.terjawab ??
         stats.answered ??
-        0;
+        (totalQuestions >= belum ? totalQuestions - belum : 0);
 
       const tulisan =
         stats.totalTulisanJaksa ??
         stats.tulisanJaksa ??
         stats.totalTulisan ??
+        stats.tulisan ??
         0;
 
-      if (totalBelumDijawabEl) totalBelumDijawabEl.textContent = belum;
-      if (totalTerjawabEl) totalTerjawabEl.textContent = terjawab;
-      if (totalTulisanJaksaEl) totalTulisanJaksaEl.textContent = tulisan;
+      if (totalBelumDijawabEl) totalBelumDijawabEl.textContent = String(belum);
+      if (totalTerjawabEl) totalTerjawabEl.textContent = String(terjawab);
+      if (totalTulisanJaksaEl) totalTulisanJaksaEl.textContent = String(tulisan);
     } catch (err) {
       console.error("❌ ERROR LOAD STATS:", err);
       showAlert("Gagal terhubung ke server (stats).", "error");
@@ -136,11 +167,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // LOAD PERTANYAAN BELUM DIJAWAB
+  // FALLBACK: HITUNG STATISTIK DARI /questions
   // ========================================================
-  async function loadPertanyaan() {
+  async function loadQuestionStatsFallback() {
     try {
-      const res = await fetch(`${apiBase}/jaksa/pertanyaan`, {
+      const res = await fetch(`${apiBase}/questions`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -149,100 +180,162 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const { data, raw } = await parseResponse(res);
-      console.log("💬 RAW PERTANYAAN:", raw);
-      console.log("💬 PARSED PERTANYAAN:", data);
+      console.log("💬 RAW QUESTIONS (/questions):", raw);
+      console.log("💬 PARSED QUESTIONS (/questions):", data);
 
       if (!res.ok) {
-        showAlert("Gagal memuat daftar pertanyaan.", "error");
+        console.warn("GET /questions tidak OK, skip fallback stats.");
         return;
       }
 
-      // support bentuk: [ ... ] atau { data: [ ... ] }
-      const list =
-        Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
 
-      if (!Array.isArray(list)) {
-        console.warn("Format data pertanyaan tidak dikenal:", data);
-        return;
-      }
+      let answered = 0;
+      let unanswered = 0;
 
-      if (tanyaTableBody) tanyaTableBody.innerHTML = "";
+      list.forEach((q) => {
+        const statusStr = (q.status || q.statusPertanyaan || "")
+          .toString()
+          .toLowerCase();
 
-      list.forEach((p) => {
-        const tr = document.createElement("tr");
+        const sudahDijawab =
+          q.terjawab === true ||
+          statusStr === "dijawab" ||
+          statusStr === "answered" ||
+          !!(Array.isArray(q.jawaban) && q.jawaban.length);
 
-        const nama =
-          p.nama ||
-          p.namaPenanya ||
-          p.nama_penanya ||
-          p.userName ||
-          p.username ||
-          "-";
-
-        const kategori =
-          p.kategori ||
-          p.kategoriPertanyaan ||
-          p.category ||
-          "-";
-
-        const pertanyaanText =
-          p.pertanyaan ||
-          p.isiPertanyaan ||
-          p.question ||
-          "-";
-
-        const statusRaw =
-          p.status ||
-          p.statusPertanyaan ||
-          (p.terjawab ? "TERJAWAB" : "BELUM DIJAWAB");
-
-        const statusLabel =
-          (statusRaw || "").toString().toUpperCase().includes("JAWAB")
-            ? statusRaw
-            : p.terjawab
-            ? "TERJAWAB"
-            : "BELUM DIJAWAB";
-
-        tr.innerHTML = `
-          <td>${nama}</td>
-          <td>${kategori}</td>
-          <td>${pertanyaanText}</td>
-          <td>${statusLabel}</td>
-          <td></td>
-        `;
-
-        // tombol aksi
-        const aksiTd = tr.lastElementChild;
-        if (aksiTd) {
-          const btnJawab = document.createElement("button");
-          btnJawab.className = "btn-aksi-jawab";
-          btnJawab.innerHTML = `<i class="fas fa-reply"></i> Jawab`;
-
-          btnJawab.addEventListener("click", () => {
-            pertanyaanTerpilih = p;
-            if (formJawabanContainer) formJawabanContainer.classList.remove("hidden");
-            if (jawabanText) jawabanText.value = "";
-            window.scrollTo({ top: formJawabanContainer.offsetTop - 80, behavior: "smooth" });
-          });
-
-          aksiTd.appendChild(btnJawab);
-        }
-
-        tanyaTableBody && tanyaTableBody.appendChild(tr);
+        if (sudahDijawab) answered += 1;
+        else unanswered += 1;
       });
 
-      // kalau stats belum diisi, pakai panjang list sebagai fallback
-      if (totalBelumDijawabEl && totalBelumDijawabEl.textContent === "0") {
-        totalBelumDijawabEl.textContent = list.length.toString();
+      if (
+        totalBelumDijawabEl &&
+        (!totalBelumDijawabEl.textContent ||
+          totalBelumDijawabEl.textContent === "0")
+      ) {
+        totalBelumDijawabEl.textContent = String(unanswered);
+      }
+
+      if (
+        totalTerjawabEl &&
+        (!totalTerjawabEl.textContent ||
+          totalTerjawabEl.textContent === "0")
+      ) {
+        totalTerjawabEl.textContent = String(answered);
       }
     } catch (err) {
-      console.error("❌ ERROR LOAD PERTANYAAN:", err);
-      showAlert("Gagal terhubung ke server (pertanyaan).", "error");
+      console.warn("❌ ERROR LOAD QUESTIONS FALLBACK:", err);
     }
   }
 
   // ========================================================
-  // FORM JAWABAN JAKSA (HANYA FRONTEND – BELUM POST KE BE)
+  // LOAD TULISAN JAKSA (TABEL + fallback jumlah kartu)
+  // ========================================================
+  async function loadTulisan() {
+    if (!tulisanTableBody) return;
+
+    tulisanTableBody.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align:center; padding:12px;">
+          Memuat data tulisan jaksa...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const res = await fetch(`${apiBase}/tulisan`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const { data, raw } = await parseResponse(res);
+      console.log("📝 RAW TULISAN (/tulisan):", raw);
+      console.log("📝 PARSED TULISAN (/tulisan):", data);
+
+      if (!res.ok) {
+        tulisanTableBody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align:center; padding:12px; color:#d32f2f;">
+              Gagal memuat tulisan jaksa.
+            </td>
+          </tr>
+        `;
+        showAlert("Gagal memuat tulisan jaksa.", "error");
+        return;
+      }
+
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.tulisan)
+        ? data.tulisan
+        : [];
+
+      tulisanCache = list;
+
+      if (!list.length) {
+        tulisanTableBody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align:center; padding:12px;">
+              Belum ada tulisan jaksa.
+            </td>
+          </tr>
+        `;
+      } else {
+        tulisanTableBody.innerHTML = list
+          .map((t) => {
+            const judul = t.judul || t.title || t.nama || "Tanpa Judul";
+            const penulis =
+              t.penulis ||
+              t.author ||
+              t.nama_penulis ||
+              t.createdBy ||
+              "Jaksa";
+            const createdRaw =
+              t.tanggal || t.createdAt || t.created_at || t.date;
+            const tanggal = formatTanggalId(createdRaw);
+
+            return `
+              <tr>
+                <td>${judul}</td>
+                <td>${penulis}</td>
+                <td>${tanggal}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      if (
+        totalTulisanJaksaEl &&
+        (!totalTulisanJaksaEl.textContent ||
+          totalTulisanJaksaEl.textContent === "0")
+      ) {
+        totalTulisanJaksaEl.textContent = String(list.length);
+      }
+    } catch (err) {
+      console.error("❌ ERROR LOAD TULISAN:", err);
+      tulisanTableBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align:center; padding:12px; color:#d32f2f;">
+            Tidak dapat terhubung ke server.
+          </td>
+        </tr>
+      `;
+      showAlert("Gagal terhubung ke server (tulisan).", "error");
+    }
+  }
+
+  // ========================================================
+  // FORM JAWABAN JAKSA (kode lama tetap disimpan)
   // ========================================================
   if (jawabanForm) {
     jawabanForm.addEventListener("submit", async (e) => {
@@ -259,53 +352,30 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // NOTE:
-      // Di sini HARUSNYA ada fetch ke endpoint jawaban,
-      // misalnya: POST /jaksa/pertanyaan/{id}/jawab
-      // Karena endpoint-nya belum kamu kasih, sementara ini
-      // kita cuma tampilkan notifikasi & log ke console.
-
       console.log("💬 (SIMULASI) KIRIM JAWABAN:", {
         pertanyaan: pertanyaanTerpilih,
         jawaban,
       });
 
-      showAlert("Fitur kirim jawaban belum dikonfigurasi endpoint-nya.", "info");
-
-      // kalau nanti endpoint sudah ada, tinggal ganti bagian di atas
-      // dengan fetch POST dan setelah sukses:
-      //  - hide form
-      //  - reload loadPertanyaan()
-
-      // Contoh rough:
-      // const res = await fetch(`${apiBase}/jaksa/pertanyaan/${pertanyaanTerpilih.id}/jawab`, { ... })
-
+      showAlert(
+        "Fitur kirim jawaban belum dikonfigurasi endpoint-nya.",
+        "info"
+      );
     });
   }
 
   if (batalJawabBtn) {
     batalJawabBtn.addEventListener("click", () => {
       pertanyaanTerpilih = null;
-      if (formJawabanContainer) formJawabanContainer.classList.add("hidden");
+      if (formJawabanContainer)
+        formJawabanContainer.classList.add("hidden");
     });
-  }
-
-  // ========================================================
-  // (OPSIONAL) TULISAN JAKSA – TABLE BIAR GAK ERROR
-  // ========================================================
-  if (tulisanTableBody) {
-    // sementara kosong dulu, nanti kalau endpoint list tulisan sudah ada
-    // tinggal tambahin fungsi loadTulisan() mirip loadPertanyaan()
-    tulisanTableBody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center;">Belum ada data tulisan jaksa.</td>
-      </tr>
-    `;
   }
 
   // ========================================================
   // JALANKAN LOAD DATA AWAL
   // ========================================================
-  loadStats();
-  loadPertanyaan();
+  loadStats();               // pakai /jaksa/dashboard/stats
+  loadTulisan();             // isi tabel tulisan (judul, penulis, tanggal)
+  loadQuestionStatsFallback(); // fallback statistik pertanyaan
 });

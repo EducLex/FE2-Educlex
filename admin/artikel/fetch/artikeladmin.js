@@ -7,17 +7,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputJudul = document.getElementById("judul");
   const inputIsi = document.getElementById("isi");
   const inputPenulis = document.getElementById("penulis");
-  const inputGambar = document.getElementById("gambar");
   const inputDokumen = document.getElementById("dokumen");
-  const inputCategoryId = document.getElementById("categoryId");
+
+  const selectJenis = document.getElementById("jenisArtikel");
+  const selectKategori = document.getElementById("kategoriArtikel");
 
   const tabelBody = document.getElementById("tabelArtikelBody");
 
   let allArticles = [];
-  let currentEditId = null; // null = mode tambah, ada value = mode edit
+  let currentEditId = null; // null = tambah, ada nilai = edit
 
-  // Helper alert pakai SweetAlert
+  // kategori disimpan supaya bisa dipakai ulang (select + mapping id -> nama)
+  let categoriesByType = { internal: [], eksternal: [] };
+  let categoriesById = {};
+
+  // ==========================
+  // Helpers umum
+  // ==========================
   function showAlertSwal(title, text, icon = "info") {
+    if (typeof Swal === "undefined") {
+      alert(`${title}\n${text || ""}`);
+      return;
+    }
     Swal.fire({
       icon,
       title,
@@ -26,7 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Helper ambil field fleksibel
   function pickField(obj, keys, fallback = "") {
     if (!obj) return fallback;
     for (const k of keys) {
@@ -45,7 +55,221 @@ document.addEventListener("DOMContentLoaded", () => {
     return fallback;
   }
 
-  // Render tabel daftar artikel
+  function getToken() {
+    return localStorage.getItem("token") || "";
+  }
+
+  // tanggal di DB kadang 0001-01-01 → anggap tidak valid, pakai tanggal hari ini saja
+  function formatArticleDate(art) {
+    const raw = pickField(art, ["tanggal", "createdAt", "created_at"], "");
+    let d = raw ? new Date(raw) : null;
+    if (!d || Number.isNaN(d.getTime()) || d.getFullYear() < 2000) {
+      d = new Date();
+    }
+    return d.toLocaleDateString("id-ID");
+  }
+
+  // ==========================
+  // KATEGORI
+  // ==========================
+  function buildFallbackCategories() {
+    // fallback kalau /categories error / kosong
+    const fallbackInternal = [
+      { _id: "internal-pembinaan", name: "Pembinaan", type: "internal" },
+      { _id: "internal-pengawasan", name: "Pengawasan", type: "internal" },
+      { _id: "internal-intelijen", name: "Intelijen", type: "internal" },
+      { _id: "internal-pidum", name: "Pidana Umum", type: "internal" },
+      { _id: "internal-pidsus", name: "Pidana Khusus", type: "internal" },
+      {
+        _id: "internal-datun",
+        name: "Perdata dan Tata Usaha Negara",
+        type: "internal",
+      },
+      { _id: "internal-pidmil", name: "Pidana Militer", type: "internal" },
+      {
+        _id: "internal-pemulihan-aset",
+        name: "Pemulihan Aset",
+        type: "internal",
+      },
+    ];
+
+    const fallbackEksternal = [
+      { _id: "eksternal-pidana", name: "Pidana", type: "eksternal" },
+      { _id: "eksternal-perdata", name: "Perdata", type: "eksternal" },
+      { _id: "eksternal-lainnya", name: "Peraturan Lain", type: "eksternal" },
+    ];
+
+    categoriesByType = {
+      internal: fallbackInternal,
+      eksternal: fallbackEksternal,
+    };
+
+    categoriesById = {};
+    [...fallbackInternal, ...fallbackEksternal].forEach((cat) => {
+      categoriesById[String(cat._id)] = cat;
+    });
+  }
+
+  function populateKategoriOptions(type) {
+    if (!selectKategori) return;
+    const kategoriType = type === "eksternal" ? "eksternal" : "internal";
+    const list = categoriesByType[kategoriType] || [];
+
+    selectKategori.innerHTML =
+      '<option value="" disabled selected>Pilih kategori / bidang artikel</option>';
+
+    list.forEach((cat) => {
+      const opt = document.createElement("option");
+      opt.value = String(cat._id);
+      opt.textContent = cat.name || "Tanpa Nama";
+      opt.dataset.type = cat.type || kategoriType;
+      selectKategori.appendChild(opt);
+    });
+  }
+
+  async function initCategories() {
+    if (!selectKategori || !selectJenis) {
+      console.warn(
+        "Select kategori / jenis tidak ditemukan di DOM, skip init kategori."
+      );
+      return;
+    }
+
+    // 1) Set fallback dulu (supaya kalau /categories error tetap ada pilihan)
+    buildFallbackCategories();
+
+    // Awal: cuma placeholder dulu (mirip peraturanadmin),
+    // kategori baru diisi setelah jenis artikel dipilih.
+    selectKategori.innerHTML =
+      '<option value="" disabled selected>Pilih kategori / bidang artikel</option>';
+
+    try {
+      const res = await fetch(`${API_BASE}/categories`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = [];
+      }
+
+      if (!res.ok) {
+        console.warn("GET /categories tidak OK, pakai fallback saja.", data);
+        return;
+      }
+
+      let list = [];
+      if (Array.isArray(data)) list = data;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.categories)) list = data.categories;
+
+      if (!list.length) {
+        console.warn("Respon /categories kosong, pakai fallback saja.");
+        return;
+      }
+
+      // 2) Bangun internal/eksternal dari data API
+      const internalFromApi = [];
+      const eksternalFromApi = [];
+      const byId = {};
+      const seenInternal = new Set();
+      const seenEksternal = new Set();
+
+      list.forEach((cat) => {
+        const id =
+          cat._id || cat.id || cat.value || cat.slug || cat.categoryId || cat.name;
+        if (!id) return;
+
+        const nameRaw = (cat.name || "").trim();
+        const sub = (cat.subkategori || "").trim();
+        const nameLower = nameRaw.toLowerCase();
+
+        let type = "internal";
+        let label = "";
+
+        if (nameLower === "internal" || nameLower === "eksternal") {
+          // Pola seperti:
+          // { name: "internal", subkategori: "Pidana Umum" }
+          type = nameLower === "eksternal" ? "eksternal" : "internal";
+          label = sub || nameRaw || "Tanpa Nama";
+        } else {
+          // Pola seperti:
+          // { name: "Pidana Umum", subkategori: "" }
+          // Anggap sebagai kategori internal (artikel dalam Kejaksaan)
+          type = "internal";
+          label = nameRaw || sub || "Tanpa Nama";
+        }
+
+        const key = label.toLowerCase();
+        if (type === "internal") {
+          if (seenInternal.has(key)) return;
+          seenInternal.add(key);
+          const obj = { _id: String(id), name: label, type: "internal" };
+          internalFromApi.push(obj);
+          byId[obj._id] = obj;
+        } else {
+          if (seenEksternal.has(key)) return;
+          seenEksternal.add(key);
+          const obj = { _id: String(id), name: label, type: "eksternal" };
+          eksternalFromApi.push(obj);
+          byId[obj._id] = obj;
+        }
+      });
+
+      // 3) Kalau API punya data, override fallback.
+      if (internalFromApi.length || eksternalFromApi.length) {
+        categoriesByType = {
+          internal:
+            internalFromApi.length ? internalFromApi : categoriesByType.internal,
+          eksternal:
+            eksternalFromApi.length ? eksternalFromApi : categoriesByType.eksternal,
+        };
+
+        if (Object.keys(byId).length) {
+          categoriesById = byId;
+        }
+      }
+
+      // 4) Kalau field jenis sudah punya nilai (misalnya setelah klik Edit),
+      // isi kategori sesuai jenis tersebut. Kalau masih kosong, biarkan placeholder.
+      const jenisNow = selectJenis.value;
+      if (jenisNow) {
+        populateKategoriOptions(jenisNow);
+      }
+    } catch (err) {
+      console.warn("Gagal fetch /categories, pakai fallback saja.", err);
+      // fallback sudah di-setup di atas, jadi diam saja.
+    }
+  }
+
+  function getCategoryNameFromArticle(art) {
+    const explicit = pickField(
+      art,
+      ["kategori", "bidang", "category.name", "category"],
+      ""
+    );
+    if (explicit) return explicit;
+
+    const catId = pickField(
+      art,
+      ["categoryId", "category_id", "category._id"],
+      ""
+    );
+    if (catId && categoriesById[String(catId)]) {
+      return categoriesById[String(catId)].name;
+    }
+    return "";
+  }
+
+  // ==========================
+  // RENDER TABEL
+  // ==========================
   function renderTable() {
     if (!tabelBody) return;
 
@@ -67,37 +291,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const penulis = pickField(
           art,
           ["penulis", "author", "createdBy"],
-          "EducLex"
+          "Tanpa Penulis"
         );
-        const tanggalRaw = pickField(
-          art,
-          ["tanggal", "createdAt", "created_at"],
-          ""
-        );
-        const tanggal = tanggalRaw
-          ? new Date(tanggalRaw).toLocaleDateString("id-ID")
-          : "-";
-
-        // simpan data penting di data-attribute biar gampang pas Edit
-        const safeIsi = pickField(
-          art,
-          ["isi", "content", "deskripsi", "body"],
-          ""
-        ).replace(/"/g, "&quot;");
-        const categoryId = pickField(
-          art,
-          ["categoryId", "category_id", "category._id"],
-          ""
-        );
+        const tanggal = formatArticleDate(art);
 
         return `
-          <tr
-            data-id="${id}"
-            data-judul="${judul.replace(/"/g, "&quot;")}"
-            data-isi="${safeIsi}"
-            data-penulis="${penulis.replace(/"/g, "&quot;")}"
-            data-category="${categoryId.replace(/"/g, "&quot;")}"
-          >
+          <tr data-id="${id}">
             <td>${judul}</td>
             <td>${tanggal}</td>
             <td>${penulis}</td>
@@ -120,20 +319,73 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = btn.closest("tr");
         if (!tr) return;
         const id = tr.getAttribute("data-id");
-        const judul = tr.getAttribute("data-judul") || "";
-        const isi = tr.getAttribute("data-isi") || "";
-        const penulis = tr.getAttribute("data-penulis") || "";
-        const category = tr.getAttribute("data-category") || "";
+        if (!id) return;
+
+        const art = allArticles.find(
+          (a) => String(a._id || a.id || a.article_id || "") === String(id)
+        );
+        if (!art) return;
 
         currentEditId = id;
 
-        if (inputJudul) inputJudul.value = judul;
-        if (inputIsi) inputIsi.value = isi;
-        if (inputPenulis) inputPenulis.value = penulis;
-        if (inputCategoryId) inputCategoryId.value = category;
+        if (inputJudul)
+          inputJudul.value = pickField(
+            art,
+            ["judul", "title", "nama"],
+            ""
+          );
+        if (inputIsi)
+          inputIsi.value = pickField(
+            art,
+            ["isi", "content", "deskripsi", "body"],
+            ""
+          );
+        if (inputPenulis)
+          inputPenulis.value = pickField(
+            art,
+            ["penulis", "author", "createdBy"],
+            ""
+          );
 
-        // kosongkan input file; file lama tetap dipakai kalau tidak diganti
-        if (inputGambar) inputGambar.value = "";
+        const jenis = pickField(
+          art,
+          ["jenis_artikel", "jenis", "type"],
+          ""
+        ).toLowerCase();
+        if (selectJenis) {
+          selectJenis.value =
+            jenis === "eksternal" || jenis === "external"
+              ? "eksternal"
+              : "internal";
+        }
+
+        const kategoriName = getCategoryNameFromArticle(art);
+        const catId = pickField(
+          art,
+          ["categoryId", "category_id", "category._id"],
+          ""
+        );
+
+        if (selectJenis) {
+          // isi opsi kategori sesuai jenis artikel yang dipilih
+          populateKategoriOptions(selectJenis.value || "internal");
+        }
+
+        if (selectKategori) {
+          if (catId && selectKategori.querySelector(`option[value="${catId}"]`)) {
+            selectKategori.value = String(catId);
+          }
+          // kalau id tidak ketemu, coba cocokkan berdasarkan nama
+          if (!selectKategori.value && kategoriName) {
+            Array.from(selectKategori.options).forEach((opt) => {
+              if (opt.textContent === kategoriName) {
+                selectKategori.value = opt.value;
+              }
+            });
+          }
+        }
+
+        // dokumen tidak bisa diisi ulang otomatis demi keamanan browser
         if (inputDokumen) inputDokumen.value = "";
 
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -150,7 +402,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = btn.closest("tr");
         if (!tr) return;
         const id = tr.getAttribute("data-id");
-        const judul = tr.getAttribute("data-judul") || "artikel ini";
+        if (!id) return;
+
+        const judul =
+          tr.querySelector("td")?.textContent?.trim() || "artikel ini";
 
         Swal.fire({
           title: `Hapus ${judul}?`,
@@ -162,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
           confirmButtonText: "Ya, hapus",
           cancelButtonText: "Batal",
         }).then((result) => {
-          if (result.isConfirmed && id) {
+          if (result.isConfirmed) {
             deleteArticle(id);
           }
         });
@@ -170,7 +425,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Ambil daftar artikel dari backend
+  // ==========================
+  // LOAD ARTIKEL
+  // ==========================
   async function loadArticles() {
     if (!tabelBody) return;
 
@@ -182,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `;
 
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const headers = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -208,18 +465,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.status === 401) {
           showAlertSwal("Sesi berakhir", "Silakan login kembali.", "error");
         } else {
-          showAlertSwal("Error", data.error || data.message || "Gagal memuat artikel.", "error");
+          showAlertSwal(
+            "Error",
+            data.error || data.message || "Gagal memuat artikel.",
+            "error"
+          );
         }
         return;
       }
 
-      if (!Array.isArray(data)) {
-        console.warn("Respon /articles bukan array:", data);
-        allArticles = [];
-      } else {
-        allArticles = data;
-      }
+      let list = [];
+      if (Array.isArray(data)) list = data;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.articles)) list = data.articles;
 
+      allArticles = list;
       renderTable();
     } catch (err) {
       console.error("❌ FETCH ERROR /articles:", err);
@@ -234,7 +494,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Tambah / update artikel
+  // ==========================
+  // SUBMIT (TAMBAH / EDIT)
+  // ==========================
   async function submitArtikel(e) {
     e.preventDefault();
     if (!formArtikel) return;
@@ -242,43 +504,46 @@ document.addEventListener("DOMContentLoaded", () => {
     const judul = inputJudul?.value.trim();
     const isi = inputIsi?.value.trim();
     const penulis = inputPenulis?.value.trim();
-    const categoryId = inputCategoryId?.value.trim();
+    const jenisArtikel = selectJenis ? selectJenis.value : "";
+    const kategoriOption =
+      selectKategori && selectKategori.selectedIndex >= 0
+        ? selectKategori.options[selectKategori.selectedIndex]
+        : null;
+    const kategoriId = kategoriOption ? kategoriOption.value : "";
+    const kategoriName = kategoriOption ? kategoriOption.textContent : "";
 
-    if (!judul || !isi || !penulis || !categoryId) {
-      showAlertSwal("Peringatan", "Semua field wajib diisi (kecuali dokumen).", "warning");
+    if (!judul || !isi || !penulis) {
+      showAlertSwal(
+        "Peringatan",
+        "Judul, isi, dan penulis wajib diisi.",
+        "warning"
+      );
       return;
     }
 
-    const token = localStorage.getItem("token");
+    if (!jenisArtikel) {
+      showAlertSwal(
+        "Peringatan",
+        "Pilih jenis artikel (internal / eksternal).",
+        "warning"
+      );
+      return;
+    }
+
+    if (!kategoriId) {
+      showAlertSwal(
+        "Peringatan",
+        "Pilih kategori / bidang artikel.",
+        "warning"
+      );
+      return;
+    }
+
+    const token = getToken();
     if (!token) {
       showAlertSwal("Tidak ada akses", "Silakan login sebagai admin.", "error");
       return;
     }
-
-    const fd = new FormData();
-    fd.append("judul", judul);
-    fd.append("isi", isi);
-    fd.append("penulis", penulis);
-    fd.append("categoryId", categoryId);
-
-    // 👉 tambahkan tanggal hanya saat tambah artikel baru
-    if (!currentEditId) {
-    fd.append("tanggal", new Date().toISOString());
-    }
-
-
-    // Untuk file: hanya kirim kalau user pilih file baru
-    if (inputGambar && inputGambar.files && inputGambar.files[0]) {
-      fd.append("gambar", inputGambar.files[0]);
-    }
-    if (inputDokumen && inputDokumen.files && inputDokumen.files[0]) {
-      fd.append("dokumen", inputDokumen.files[0]);
-    }
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      // Jangan set Content-Type → biarkan browser set multipart/form-data
-    };
 
     const isEdit = !!currentEditId;
     const url = isEdit
@@ -287,11 +552,50 @@ document.addEventListener("DOMContentLoaded", () => {
     const method = isEdit ? "PUT" : "POST";
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers,
-        body: fd,
-      });
+      let res;
+      if (isEdit) {
+        // Update artikel (tanpa ubah dokumen untuk menghindari error di backend)
+        const payload = {
+          judul,
+          isi,
+          penulis,
+          jenis: jenisArtikel,
+          jenis_artikel: jenisArtikel,
+          kategori: kategoriName,
+          categoryId: kategoriId,
+        };
+
+        res = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Tambah artikel baru + upload dokumen
+        const fd = new FormData();
+        fd.append("judul", judul);
+        fd.append("isi", isi);
+        fd.append("penulis", penulis);
+        fd.append("jenis", jenisArtikel);
+        fd.append("jenis_artikel", jenisArtikel);
+        fd.append("kategori", kategoriName);
+        fd.append("categoryId", kategoriId);
+
+        if (inputDokumen && inputDokumen.files && inputDokumen.files[0]) {
+          fd.append("dokumen", inputDokumen.files[0]);
+        }
+
+        res = await fetch(url, {
+          method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: fd,
+        });
+      }
 
       const raw = await res.text();
       let data;
@@ -311,18 +615,22 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      Swal.fire({
-        icon: "success",
-        title: isEdit ? "Artikel diperbarui" : "Artikel ditambahkan",
-        text: isEdit
+      showAlertSwal(
+        "Berhasil",
+        isEdit
           ? "Perubahan artikel berhasil disimpan."
           : "Artikel baru berhasil disimpan.",
-        confirmButtonColor: "#6D4C41",
-      });
+        "success"
+      );
 
-      // reset form & mode edit
       formArtikel.reset();
       currentEditId = null;
+      // reset dropdown ke default (mirip peraturanadmin)
+      if (selectJenis) selectJenis.value = "";
+      if (selectKategori) {
+        selectKategori.innerHTML =
+          '<option value="" disabled selected>Pilih kategori / bidang artikel</option>';
+      }
 
       loadArticles();
     } catch (err) {
@@ -331,9 +639,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Hapus artikel
+  // ==========================
+  // DELETE ARTIKEL
+  // ==========================
   async function deleteArticle(id) {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const headers = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -361,14 +671,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      Swal.fire({
-        icon: "success",
-        title: "Artikel terhapus",
-        text: "Artikel berhasil dihapus.",
-        confirmButtonColor: "#6D4C41",
-      });
+      showAlertSwal("Berhasil", "Artikel berhasil dihapus.", "success");
 
-      // Jika sedang mengedit artikel yg dihapus, reset form
       if (currentEditId === id) {
         currentEditId = null;
         if (formArtikel) formArtikel.reset();
@@ -381,11 +685,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Event submit form
+  // ==========================
+  // EVENT LISTENER
+  // ==========================
   if (formArtikel) {
     formArtikel.addEventListener("submit", submitArtikel);
   }
 
+  if (selectJenis) {
+    selectJenis.addEventListener("change", (e) => {
+      const val = e.target.value || "";
+      if (!val) {
+        if (selectKategori) {
+          selectKategori.innerHTML =
+            '<option value="" disabled selected>Pilih kategori / bidang artikel</option>';
+        }
+        return;
+      }
+      populateKategoriOptions(val);
+    });
+  }
+
   // Load awal
+  initCategories();
   loadArticles();
 });

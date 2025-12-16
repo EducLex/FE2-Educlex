@@ -65,7 +65,8 @@
       <!-- Form Tambah Peraturan -->
       <section class="data-section">
         <h2>Tambah Peraturan Baru</h2>
-        <form id="formPeraturan" class="form-artikel">
+        <!-- 🔥 penting: multipart untuk upload file -->
+        <form id="formPeraturan" class="form-artikel" enctype="multipart/form-data">
           <!-- Judul -->
           <div class="form-group">
             <label for="judul">Judul Peraturan / Kasus</label>
@@ -102,7 +103,7 @@
             </select>
           </div>
 
-          <!-- Subkategori / Bidang (opsional) -->
+          <!-- Subkategori / Bidang -->
           <div class="form-group">
             <label for="kategoriDetail">Kategori Hukum (Bidang)</label>
             <select id="kategoriDetail" name="kategoriDetail">
@@ -127,6 +128,20 @@
             </select>
           </div>
 
+          <!-- Dokumen (Upload) -->
+          <div class="form-group">
+            <label for="dokumenUrl">Dokumen (Upload PDF)</label>
+            <input
+              type="file"
+              id="dokumenUrl"
+              name="dokumen"
+              accept=".pdf,.doc,.docx"
+            >
+            <small class="form-hint">
+              Opsional. Unggah dokumen terkait (PDF/Word). Jika tidak diisi, peraturan tetap bisa disimpan.
+            </small>
+          </div>
+
           <button type="submit" class="btn-simpan">
             <i class="fas fa-save"></i> Simpan Data
           </button>
@@ -140,7 +155,8 @@
           <thead>
             <tr>
               <th>Judul Kasus / Topik</th>
-              <th>Jumlah Peraturan</th>
+              <!-- kolom jumlah disembunyikan, tapi tidak dihapus -->
+              <th style="display:none;">Jumlah Peraturan</th>
               <th>Tanggal Ditambahkan</th>
               <th>Aksi</th>
             </tr>

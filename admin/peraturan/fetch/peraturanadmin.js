@@ -9,10 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectKategoriUtama = document.getElementById("kategoriUtama");
   const selectKategoriDetail = document.getElementById("kategoriDetail");
 
-  let editingId = null; // null = mode tambah, ada nilai = mode edit
+  // dukung beberapa kemungkinan id input file
+  const dokumenFileInput =
+    document.getElementById("dokumenFile") ||
+    document.getElementById("dokumen") ||
+    document.querySelector("input[type='file'][name='dokumen']");
+
+  const dokumenUrlInput = document.getElementById("dokumenUrl"); // kalau ada versi link
+
+  let editingId = null; // null = mode tambah
+  let categories = [];  // hasil GET /categories
+  let internalSubs = [];
+  let eksternalSubs = [];
 
   // ============================
-  // Helper SweetAlert wrapper
+  // Helper SweetAlert
   // ============================
   function showError(message) {
     Swal.fire("Gagal", message, "error");
@@ -27,6 +38,113 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
+  // KATEGORI dari /categories
+  // ============================
+  function applySubkategoriOptions(jenis, preselectText) {
+    if (!selectKategoriDetail) return;
+
+    const jenisLower = (jenis || "").toLowerCase();
+
+    // reset options
+    selectKategoriDetail.innerHTML = `
+      <option value="" disabled selected>Pilih kategori / subkategori</option>
+    `;
+
+    if (!jenisLower) return;
+
+    const filtered = categories.filter(
+      (c) => String(c.name || "").toLowerCase() === jenisLower
+    );
+
+    const usedSubs = new Set();
+
+    filtered.forEach((c) => {
+      const id = c._id || c.id || c.categoryId;
+      const sub = c.subkategori || "";
+      if (!id || !sub) return;
+
+      // hindari duplikat subkategori kalau ada dua entry sama
+      if (usedSubs.has(sub)) return;
+      usedSubs.add(sub);
+
+      const opt = document.createElement("option");
+      opt.value = id;                 // value = ID kategori (disimpan di DB)
+      opt.textContent = sub;          // teks yang kelihatan
+      opt.dataset.subkategori = sub;  // simpan teks aslinya
+
+      if (preselectText && preselectText === sub) {
+        opt.selected = true;
+      }
+      selectKategoriDetail.appendChild(opt);
+    });
+  }
+
+  async function loadCategories() {
+    if (!selectKategoriDetail) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/categories`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = [];
+      }
+
+      if (!Array.isArray(data)) return;
+
+      // simpan hasil aslinya dulu
+      categories = data;
+
+      // ==============================
+      // Tambah kategori internal manual:
+      // _id: 693f6813e1e21d9a8b0101d6
+      // name: "internal"
+      // subkategori: "Pemulihan Aset"
+      // ==============================
+      const extraInternalCategory = {
+        _id: "693f6813e1e21d9a8b0101d6",
+        name: "internal",
+        subkategori: "Pemulihan Aset"
+      };
+
+      const alreadyHasPemulihan = categories.some((c) => {
+        const name = String(c.name || "").toLowerCase();
+        const sub = String(c.subkategori || "").toLowerCase();
+        return name === "internal" && sub === "pemulihan aset";
+      });
+
+      // kalau backend belum punya, kita inject; kalau sudah, kita nggak dobelin
+      if (!alreadyHasPemulihan) {
+        categories.push(extraInternalCategory);
+      }
+
+      // rebuild list internal & eksternal setelah injeksi
+      internalSubs = categories
+        .filter((c) => String(c.name || "").toLowerCase() === "internal")
+        .map((c) => c.subkategori)
+        .filter(Boolean);
+
+      eksternalSubs = categories
+        .filter((c) => String(c.name || "").toLowerCase() === "eksternal")
+        .map((c) => c.subkategori)
+        .filter(Boolean);
+
+      const currentJenis = selectKategoriUtama ? selectKategoriUtama.value : "";
+      applySubkategoriOptions(currentJenis);
+    } catch (err) {
+      console.warn("Gagal memuat /categories:", err);
+    }
+  }
+
+  // ============================
   // Load list peraturan (GET)
   // ============================
   async function loadPeraturan() {
@@ -34,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tabelBody.innerHTML = `
       <tr>
-        <td colspan="4" style="text-align:center; color:#6d4c41;">
+        <td colspan="3" style="text-align:center; color:#6d4c41;">
           Memuat data...
         </td>
       </tr>
@@ -42,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch(`${API_BASE}/peraturan`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + getToken()
@@ -60,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("❌ Error GET /peraturan:", res.status, data);
         tabelBody.innerHTML = `
           <tr>
-            <td colspan="4" style="text-align:center; color:#f44336;">
+            <td colspan="3" style="text-align:center; color:#f44336;">
               Gagal mengambil data peraturan.
             </td>
           </tr>
@@ -71,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!Array.isArray(data) || data.length === 0) {
         tabelBody.innerHTML = `
           <tr>
-            <td colspan="4" style="text-align:center; color:#6d4c41;">
+            <td colspan="3" style="text-align:center; color:#6d4c41;">
               Belum ada data peraturan.
             </td>
           </tr>
@@ -79,12 +198,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // urutkan dari yang terbaru
+      data.sort((a, b) => {
+        const da = a.tanggal || a.createdAt || a.created_at;
+        const db = b.tanggal || b.createdAt || b.created_at;
+        return new Date(db || 0) - new Date(da || 0);
+      });
+
       tabelBody.innerHTML = data
         .map((item) => {
           const id = item.id || item._id || "";
           const judul = item.judul || "-";
-          const isi = item.isi;
-          const jumlahPeraturan = Array.isArray(isi) ? isi.length : 1;
 
           const tanggalRaw =
             item.tanggal || item.created_at || item.createdAt || "";
@@ -99,7 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
           return `
             <tr>
               <td>${judul}</td>
-              <td style="text-align:center;">${jumlahPeraturan}</td>
               <td>${tanggal}</td>
               <td>
                 <button class="btn-edit action-btn" data-id="${id}">
@@ -114,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .join("");
 
-      // Pasang event Edit
+      // EDIT
       document.querySelectorAll(".btn-edit").forEach((btn) => {
         btn.addEventListener("click", () => {
           const id = btn.getAttribute("data-id");
@@ -123,57 +246,72 @@ document.addEventListener("DOMContentLoaded", () => {
           );
           if (!record) return;
 
-          // Isi form untuk mode edit
           editingId = id;
-          document.getElementById("judul").value = record.judul || "";
+
+          const judulInput = document.getElementById("judul");
+          if (judulInput) judulInput.value = record.judul || "";
 
           const container = document.getElementById("peraturanContainer");
-          container.innerHTML = "";
+          if (container) {
+            container.innerHTML = "";
+            const isiArray = Array.isArray(record.isi)
+              ? record.isi
+              : (record.isi || "")
+                  .split(/\n{2,}|\r\n{2,}/)
+                  .map((s) => s.trim())
+                  .filter(Boolean);
 
-          const isiArray = Array.isArray(record.isi)
-            ? record.isi
-            : (record.isi || "").split("\n").filter((s) => s.trim() !== "");
+            if (isiArray.length === 0) isiArray.push("");
 
-          if (isiArray.length === 0) isiArray.push("");
+            isiArray.forEach((teks, idx) => {
+              const div = document.createElement("div");
+              div.className = "form-group peraturan-item";
+              div.innerHTML = `
+                <label for="isi${idx + 1}">Isi Peraturan</label>
+                <textarea
+                  id="isi${idx + 1}"
+                  name="isi[]"
+                  rows="4"
+                  placeholder="Masukkan isi peraturan..."
+                  required
+                >${teks}</textarea>
+              `;
+              container.appendChild(div);
+            });
+          }
 
-          isiArray.forEach((teks, idx) => {
-            const div = document.createElement("div");
-            div.className = "form-group peraturan-item";
-            div.innerHTML = `
-              <label for="isi${idx + 1}">Isi Peraturan</label>
-              <textarea
-                id="isi${idx + 1}"
-                name="isi[]"
-                rows="4"
-                placeholder="Masukkan isi peraturan..."
-                required
-              >${teks}</textarea>
-            `;
-            container.appendChild(div);
-          });
+          // kategori utama & subkategori
+          const kategori = record.kategori || record.kategoriUtama || "";
+          const bidang =
+            record.bidang ||
+            record.kategoriDetail ||
+            record.subkategori ||
+            "";
 
-          // Kategori utama & detail jika ada
           if (selectKategoriUtama) {
-            selectKategoriUtama.value =
-              record.kategori === "internal" || record.kategori === "eksternal"
-                ? record.kategori
-                : "";
+            selectKategoriUtama.value = kategori || "";
           }
-          if (selectKategoriDetail) {
-            selectKategoriDetail.value =
-              record.bidang || record.kategori_detail || "";
-          }
+          applySubkategoriOptions(kategori, bidang);
 
-          // Ubah teks tombol
+          if (dokumenUrlInput) {
+            dokumenUrlInput.value =
+              record.dokumen_url ||
+              record.dokumenUrl ||
+              record.link_dokumen ||
+              "";
+          }
+          if (dokumenFileInput) dokumenFileInput.value = "";
+
           const btnSimpan = formPeraturan.querySelector(".btn-simpan");
           if (btnSimpan) {
             btnSimpan.innerHTML = `<i class="fas fa-save"></i> Perbarui Data`;
           }
+
           window.scrollTo({ top: 0, behavior: "smooth" });
         });
       });
 
-      // Pasang event Delete
+      // DELETE
       document.querySelectorAll(".btn-delete").forEach((btn) => {
         btn.addEventListener("click", () => {
           const id = btn.getAttribute("data-id");
@@ -189,9 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
             confirmButtonText: "Ya, hapus",
             cancelButtonText: "Batal"
           }).then((result) => {
-            if (result.isConfirmed) {
-              deletePeraturan(id);
-            }
+            if (result.isConfirmed) deletePeraturan(id);
           });
         });
       });
@@ -199,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("❌ FETCH ERROR /peraturan:", err);
       tabelBody.innerHTML = `
         <tr>
-          <td colspan="4" style="text-align:center; color:#f44336;">
+          <td colspan="3" style="text-align:center; color:#f44336;">
             Gagal terhubung ke server.
           </td>
         </tr>
@@ -229,7 +365,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) {
         console.error("❌ Error DELETE /peraturan/:id:", res.status, data);
-        showError(data.error || data.message || "Gagal menghapus peraturan.");
+        showError(
+          data.error || data.message || "Gagal menghapus peraturan."
+        );
         return;
       }
 
@@ -242,17 +380,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
-  // POST /peraturan  (tambah)
-  // PUT  /peraturan/:id (edit)
+  // SUBMIT (POST / PUT)
   // ============================
   async function submitPeraturan(e) {
     e.preventDefault();
 
-    const judul = document.getElementById("judul").value.trim();
+    const judulInput = document.getElementById("judul");
+    const judul = judulInput ? judulInput.value.trim() : "";
+
     const isiTextareas = document.querySelectorAll(
       "#peraturanContainer textarea[name='isi[]']"
     );
-
     const isiList = Array.from(isiTextareas)
       .map((ta) => ta.value.trim())
       .filter((v) => v !== "");
@@ -260,8 +398,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const kategoriUtama = selectKategoriUtama
       ? selectKategoriUtama.value
       : "";
-    const kategoriDetail = selectKategoriDetail
-      ? selectKategoriDetail.value
+    const selectedOption = selectKategoriDetail
+      ? selectKategoriDetail.options[selectKategoriDetail.selectedIndex]
+      : null;
+
+    const categoryId = selectedOption ? selectedOption.value : "";
+    const kategoriDetail = selectedOption
+      ? (selectedOption.dataset.subkategori || selectedOption.textContent || "").trim()
       : "";
 
     if (!judul || isiList.length === 0) {
@@ -274,21 +417,82 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // BE minta kategori HARUS 'internal' atau 'eksternal'
-    if (!["internal", "eksternal"].includes(kategoriUtama)) {
-      showError("Kategori harus 'internal' atau 'eksternal'.");
+    if (!kategoriDetail) {
+      showError("Pilih kategori / subkategori peraturan.");
       return;
     }
 
-    const payload = {
-      judul: judul,
-      isi: isiList.join("\n\n"), // ikuti format curl: satu field string
-      kategori: kategoriUtama,   // <-- INI yang dibaca BE
-      // info tambahan, kalau BE abaikan juga tidak masalah
-      bidang: kategoriDetail || null
-    };
+    // VALIDASI lawan /categories
+    if (kategoriUtama === "internal" && internalSubs.length) {
+      if (!internalSubs.includes(kategoriDetail)) {
+        showError(
+          `Subkategori internal "${kategoriDetail}" tidak ditemukan di data /categories. ` +
+          `Gunakan salah satu dari: ${internalSubs.join(", ")}`
+        );
+        return;
+      }
+    }
+    if (kategoriUtama === "eksternal" && eksternalSubs.length) {
+      if (!eksternalSubs.includes(kategoriDetail)) {
+        showError(
+          `Subkategori eksternal "${kategoriDetail}" tidak ditemukan di data /categories. ` +
+          `Gunakan salah satu dari: ${eksternalSubs.join(", ")}`
+        );
+        return;
+      }
+    }
 
-    console.log("📤 PAYLOAD POST/PUT /peraturan:", payload);
+    const token = getToken();
+    if (!token) {
+      showError("Sesi login berakhir, silakan login ulang.");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("judul", judul);
+    fd.append("isi", isiList.join("\n\n"));
+    fd.append("kategori", kategoriUtama);
+    fd.append("bidang", kategoriDetail);
+    fd.append("subkategori", kategoriDetail);
+
+    // field spesifik internal / eksternal
+    if (kategoriUtama === "internal") {
+      fd.append("subkategoriInternal", kategoriDetail);
+      fd.append("subKategoriInternal", kategoriDetail);
+      fd.append("subkategori_internal", kategoriDetail);
+    } else if (kategoriUtama === "eksternal") {
+      fd.append("subkategoriEksternal", kategoriDetail);
+      fd.append("subKategoriEksternal", kategoriDetail);
+      fd.append("subkategori_eksternal", kategoriDetail);
+    }
+
+    if (categoryId) {
+      fd.append("categoryId", categoryId);
+      fd.append("kategoriId", categoryId);
+    }
+
+    const hasFile =
+      dokumenFileInput &&
+      dokumenFileInput.files &&
+      dokumenFileInput.files.length > 0;
+
+    fd.append("hasDokumenFile", hasFile ? "true" : "false");
+
+    if (hasFile) {
+      // backend sebaiknya menyimpan req.file.filename dan path "uploads/<filename>"
+      fd.append("dokumen", dokumenFileInput.files[0]);
+    } else if (dokumenUrlInput && dokumenUrlInput.value.trim()) {
+      fd.append("dokumen_url", dokumenUrlInput.value.trim());
+    }
+
+    console.log("📤 PAYLOAD PREVIEW POST/PUT /peraturan:", {
+      judul,
+      isi: isiList.join("\n\n"),
+      kategori: kategoriUtama,
+      bidang: kategoriDetail,
+      categoryId,
+      hasDokumenFile: hasFile
+    });
 
     const url = editingId
       ? `${API_BASE}/peraturan/${editingId}`
@@ -299,10 +503,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + getToken()
+          Authorization: "Bearer " + token
+          // jangan set Content-Type, biar browser set multipart/form-data
         },
-        body: JSON.stringify(payload)
+        body: fd
       });
 
       const text = await res.text();
@@ -331,23 +535,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // reset form
       editingId = null;
-      formPeraturan.reset();
-      if (selectKategoriUtama) selectKategoriUtama.value = "";
-      if (selectKategoriDetail) selectKategoriDetail.value = "";
-      // kembalikan 1 textarea default
+      if (formPeraturan) formPeraturan.reset();
+
+      if (selectKategoriDetail) {
+        selectKategoriDetail.innerHTML =
+          `<option value="" disabled selected>Pilih kategori / subkategori</option>`;
+      }
+
       const container = document.getElementById("peraturanContainer");
-      container.innerHTML = `
-        <div class="form-group peraturan-item">
-          <label for="isi1">Isi Peraturan</label>
-          <textarea
-            id="isi1"
-            name="isi[]"
-            rows="4"
-            placeholder="Masukkan isi peraturan..."
-            required
-          ></textarea>
-        </div>
-      `;
+      if (container) {
+        container.innerHTML = `
+          <div class="form-group peraturan-item">
+            <label for="isi1">Isi Peraturan</label>
+            <textarea
+              id="isi1"
+              name="isi[]"
+              rows="4"
+              placeholder="Masukkan isi peraturan..."
+              required
+            ></textarea>
+          </div>
+        `;
+      }
+      if (dokumenFileInput) dokumenFileInput.value = "";
+
       const btnSimpan = formPeraturan.querySelector(".btn-simpan");
       if (btnSimpan) {
         btnSimpan.innerHTML = `<i class="fas fa-save"></i> Simpan Data`;
@@ -361,12 +572,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
-  // Event bindings
+  // Events
   // ============================
   if (formPeraturan) {
     formPeraturan.addEventListener("submit", submitPeraturan);
   }
 
+  if (selectKategoriUtama) {
+    selectKategoriUtama.addEventListener("change", () => {
+      const jenis = selectKategoriUtama.value;
+      applySubkategoriOptions(jenis);
+    });
+  }
+
   // initial load
+  loadCategories();
   loadPeraturan();
 });
