@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
   const confirmInput = document.getElementById("confirm_password");
-  const fotoInput = document.getElementById("foto");
+  const fotoInput = document.getElementById("foto"); // sekarang boleh null (karena HTML-nya dihapus)
 
   const submitBtn = formJaksa?.querySelector(".btn-simpan");
 
@@ -55,29 +55,46 @@ document.addEventListener("DOMContentLoaded", () => {
   function setCreateMode() {
     isEditMode = false;
     editingJaksaId = null;
+
     if (submitBtn) {
       submitBtn.innerHTML = `<i class="fas fa-save"></i> Simpan Data Jaksa`;
     }
-    // password wajib lagi
-    passwordInput?.setAttribute("required", "required");
-    confirmInput?.setAttribute("required", "required");
-    formJaksa?.reset();
+
+    // reset form + password wajib lagi
+    if (formJaksa) formJaksa.reset();
+    if (passwordInput) {
+      passwordInput.value = "";
+      passwordInput.setAttribute("required", "required");
+    }
+    if (confirmInput) {
+      confirmInput.value = "";
+      confirmInput.setAttribute("required", "required");
+    }
     if (selectBidang) selectBidang.selectedIndex = 0;
   }
 
   function setEditMode(id) {
     isEditMode = true;
     editingJaksaId = id;
+
     if (submitBtn) {
       submitBtn.innerHTML = `<i class="fas fa-save"></i> Perbarui Data Jaksa`;
     }
+
     // di edit, password boleh kosong
-    passwordInput?.removeAttribute("required");
-    confirmInput?.removeAttribute("required");
+    if (passwordInput) {
+      passwordInput.value = "";
+      passwordInput.removeAttribute("required");
+    }
+    if (confirmInput) {
+      confirmInput.value = "";
+      confirmInput.removeAttribute("required");
+    }
+    // form tidak di-reset supaya value yang sudah dimasukkan tetap ada
   }
 
   // =========================
-  // Load Bidang dari /bidang (kalau ada)
+  // Load Bidang dari /bidang
   // =========================
   async function loadBidang() {
     if (!selectBidang) return;
@@ -97,7 +114,20 @@ document.addEventListener("DOMContentLoaded", () => {
         data = [];
       }
 
-      if (!res.ok || !Array.isArray(data) || data.length === 0) {
+      let list;
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data?.data)) {
+        list = data.data;
+      } else {
+        console.warn(
+          "⚠️ /bidang tidak mengembalikan array, pakai option statis HTML saja:",
+          data
+        );
+        return;
+      }
+
+      if (!res.ok || !list || list.length === 0) {
         console.warn("⚠️ /bidang gagal atau kosong, pakai option statis HTML saja.", data);
         return;
       }
@@ -106,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <option value="" disabled selected>Pilih Bidang Jaksa</option>
       `;
 
-      data.forEach((item) => {
+      list.forEach((item) => {
         const id =
           item.id ||
           item._id ||
@@ -142,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!Array.isArray(list) || list.length === 0) {
       tabelBody.innerHTML = `
-        <tr><td colspan="5" style="text-align:center;">Belum ada data jaksa</td></tr>
+        <tr><td colspan="4" style="text-align:center;">Belum ada data jaksa</td></tr>
       `;
       return;
     }
@@ -150,15 +180,15 @@ document.addEventListener("DOMContentLoaded", () => {
     tabelBody.innerHTML = list
       .map((j) => {
         const id =
-          j._id ||
           j.id ||
+          j._id ||
           j.jaksa_id ||
           j.user_id ||
           "";
 
         const nama = j.nama || j.name || "-";
         const nip = j.nip || "-";
-        const jabatan = j.jabatan || "-";
+        const jabatan = j.jabatan || ""; // tetap disimpan di data-* untuk edit
         const email = j.email || "-";
         const bidangNama =
           j.bidang_nama ||
@@ -177,7 +207,6 @@ document.addEventListener("DOMContentLoaded", () => {
           >
             <td>${escapeHtml(nama)}</td>
             <td>${escapeHtml(nip)}</td>
-            <td>${escapeHtml(jabatan)}</td>
             <td>${escapeHtml(email)}</td>
             <td>
               <button class="btn-aksi btn-edit" data-id="${escapeHtml(id)}">
@@ -192,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
 
-    // Pasang handler Edit
+    // Handler Edit
     tabelBody.querySelectorAll(".btn-edit").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-id");
@@ -227,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Pasang handler Delete
+    // Handler Delete
     tabelBody.querySelectorAll(".btn-delete").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-id");
@@ -245,9 +274,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const token = getToken();
     if (!token) {
-      // Kalau belum login admin, tampilkan kosong tapi jangan error terus
       tabelBody.innerHTML = `
-        <tr><td colspan="5" style="text-align:center; color:#f44336;">
+        <tr><td colspan="4" style="text-align:center; color:#f44336;">
           Sesi admin habis. Silakan login ulang.
         </td></tr>
       `;
@@ -255,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     tabelBody.innerHTML = `
-      <tr><td colspan="5" style="text-align:center;">Memuat data jaksa...</td></tr>
+      <tr><td colspan="4" style="text-align:center;">Memuat data jaksa...</td></tr>
     `;
 
     try {
@@ -274,19 +302,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) {
         console.error("❌ Error GET /jaksa:", res.status, data);
         tabelBody.innerHTML = `
-          <tr><td colspan="5" style="text-align:center; color:#f44336;">
+          <tr><td colspan="4" style="text-align:center; color:#f44336;">
             Gagal memuat data jaksa.
           </td></tr>
         `;
         return;
       }
 
-      const list = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+      const list = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
+
       renderJaksaTable(list);
     } catch (err) {
       console.error("❌ FETCH ERROR /jaksa:", err);
       tabelBody.innerHTML = `
-        <tr><td colspan="5" style="text-align:center; color:#f44336;">
+        <tr><td colspan="4" style="text-align:center; color:#f44336;">
           Gagal terhubung ke server.
         </td></tr>
       `;
@@ -317,9 +350,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!konfirmasi.isConfirmed) return;
 
     try {
+      console.log("🗑️ DELETE JAKSA:", `${API_BASE}${JAKSA_LIST_ENDPOINT}/${id}`);
+
       const res = await fetch(`${API_BASE}${JAKSA_LIST_ENDPOINT}/${id}`, {
         method: "DELETE",
-        headers: { Authorization: "Bearer " + token },
+        headers: {
+          Authorization: "Bearer " + token,
+          Accept: "application/json",
+        },
       });
 
       const text = await res.text();
@@ -330,13 +368,32 @@ document.addEventListener("DOMContentLoaded", () => {
         data = { message: text };
       }
 
+      console.log("📥 RESPONSE DELETE:", res.status, data);
+
       if (!res.ok) {
-        console.error("❌ Error DELETE /jaksa/:id:", res.status, data);
-        showError(data.error || data.message || "Gagal menghapus data jaksa.");
+        if (res.status === 401) {
+          showError(
+            data.error ||
+              "Token tidak valid / kedaluwarsa. Silakan login ulang sebagai admin."
+          );
+          return;
+        }
+        if (res.status === 403) {
+          showError(
+            data.error || "Forbidden: hanya Admin yang boleh menghapus Jaksa."
+          );
+          return;
+        }
+
+        showError(
+          data.error ||
+            data.message ||
+            `Gagal menghapus data jaksa (status ${res.status}).`
+        );
         return;
       }
 
-      showSuccess("Data jaksa berhasil dihapus.");
+      showSuccess(data.message || "Data jaksa berhasil dihapus.");
       await loadDaftarJaksa();
     } catch (err) {
       console.error("❌ FETCH ERROR DELETE /jaksa/:id:", err);
@@ -350,12 +407,12 @@ document.addEventListener("DOMContentLoaded", () => {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    const nama = namaInput.value.trim();
-    const nip = nipInput.value.trim();
-    const jabatan = jabatanInput.value.trim();
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    const confirmPassword = confirmInput.value;
+    const nama = (namaInput?.value || "").trim();
+    const nip = (nipInput?.value || "").trim();
+    const jabatan = (jabatanInput?.value || "").trim();
+    const email = (emailInput?.value || "").trim();
+    const password = passwordInput?.value || "";
+    const confirmPassword = confirmInput?.value || "";
 
     if (!nama || !nip || !jabatan || !email) {
       showError("Nama, NIP, jabatan, dan email wajib diisi.");
@@ -375,12 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fotoFile =
       fotoInput && fotoInput.files && fotoInput.files.length > 0
         ? fotoInput.files[0]
-        : null;
-
-    if (!fotoFile && !isEditMode) {
-      showError("Silakan unggah foto jaksa.");
-      return;
-    }
+        : null; // foto sekarang opsional
 
     // Validasi password
     if (!isEditMode) {
@@ -425,49 +477,45 @@ document.addEventListener("DOMContentLoaded", () => {
       selectBidang.value ||
       "";
 
-    const username = nama; // biar field username di Mongo terisi
+    const username = nama; // biar field username di backend terisi
 
-    // Pakai FormData supaya bisa kirim file
-    const formData = new FormData();
-    formData.append("nama", nama);
-    formData.append("username", username);
-    formData.append("nip", nip);
-    formData.append("jabatan", jabatan);
-    formData.append("email", email);
-    if (!isEditMode || (password && confirmPassword)) {
-      formData.append("password", password);
-      formData.append("confirm_password", confirmPassword);
-    }
-    if (fotoFile) {
-      formData.append("foto", fotoFile);
-    }
-    if (bidangId) {
-      formData.append("bidang_id", bidangId);
-    }
-    if (bidangNama) {
-      formData.append("bidang_nama", bidangNama);
-    }
+    // payload dasar utk JSON / FormData
+    const basePayload = {
+      nama,
+      username,
+      nip,
+      jabatan,
+      email,
+      ...(bidangId ? { bidang_id: bidangId } : {}),
+      ...(bidangNama ? { bidang_nama: bidangNama } : {}),
+    };
 
-    try {
-      if (isEditMode && editingJaksaId) {
-        // =========================
-        // UPDATE JAKSA (PUT /jaksa/:id)
-        // =========================
-        console.log(
-          "📤 UPDATE JAKSA: PUT",
-          `${API_BASE}${JAKSA_LIST_ENDPOINT}/${editingJaksaId}`
-        );
+    // =========================
+    // MODE EDIT → UPDATE JAKSA
+    // =========================
+    if (isEditMode && editingJaksaId) {
+      const updatePayload = { ...basePayload };
 
-        const res = await fetch(
-          `${API_BASE}${JAKSA_LIST_ENDPOINT}/${editingJaksaId}`,
-          {
-            method: "PUT",
-            headers: { Authorization: "Bearer " + token },
-            body: formData,
-          }
-        );
+      if (password && confirmPassword) {
+        updatePayload.password = password;
+        updatePayload.confirm_password = confirmPassword;
+      }
 
-        const text = await res.text();
+      const url = `${API_BASE}${JAKSA_LIST_ENDPOINT}/${editingJaksaId}`;
+      console.log("📤 UPDATE JAKSA: PUT (JSON)", url, updatePayload);
+
+      try {
+        // 1) Coba kirim sebagai JSON
+        let res = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify(updatePayload),
+        });
+
+        let text = await res.text();
         let data;
         try {
           data = JSON.parse(text);
@@ -475,7 +523,39 @@ document.addEventListener("DOMContentLoaded", () => {
           data = { message: text };
         }
 
-        console.log("📥 RESPONSE UPDATE:", res.status, data);
+        console.log("📥 RESPONSE UPDATE (JSON):", res.status, data);
+
+        // Kalau backend maunya multipart & kita punya foto → fallback
+        if (!res.ok && fotoFile) {
+          console.warn(
+            "⚠️ PUT JSON gagal, coba ulang sebagai multipart FormData (beserta foto)..."
+          );
+
+          const fdUpdate = new FormData();
+          Object.entries(updatePayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              fdUpdate.append(key, value);
+            }
+          });
+          fdUpdate.append("foto", fotoFile);
+
+          res = await fetch(url, {
+            method: "PUT",
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+            body: fdUpdate,
+          });
+
+          text = await res.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { message: text };
+          }
+
+          console.log("📥 RESPONSE UPDATE (FormData fallback):", res.status, data);
+        }
 
         if (!res.ok) {
           if (res.status === 401) {
@@ -504,22 +584,34 @@ document.addEventListener("DOMContentLoaded", () => {
         setCreateMode();
         await loadDaftarJaksa();
         return;
+      } catch (err) {
+        console.error("❌ FETCH ERROR UPDATE JAKSA:", err);
+        showError("Gagal terhubung ke server.");
+        return;
       }
+    }
 
-      // =========================
-      // REGISTER JAKSA BARU (POST /auth/register-jaksa)
-      // =========================
+    // =========================
+    // MODE TAMBAH BARU → REGISTER JAKSA
+    // =========================
+    const formData = new FormData();
+    Object.entries(basePayload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        formData.append(key, value);
+      }
+    });
+    formData.append("password", password);
+    formData.append("confirm_password", confirmPassword);
+    if (fotoFile) {
+      formData.append("foto", fotoFile);
+    }
+
+    try {
       console.log(
         "📤 REGISTER JAKSA: POST",
         `${API_BASE}${REGISTER_JAKSA_ENDPOINT}`,
         {
-          nama,
-          username,
-          nip,
-          jabatan,
-          email,
-          bidang_id: bidangId,
-          bidang_nama: bidangNama,
+          ...basePayload,
           foto: fotoFile?.name,
         }
       );
@@ -596,16 +688,13 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        const resVerify = await fetch(
-          `${API_BASE}${VERIFY_EMAIL_ENDPOINT}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, otp: otp.trim() }),
-          }
-        );
+        const resVerify = await fetch(`${API_BASE}${VERIFY_EMAIL_ENDPOINT}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, otp: otp.trim() }),
+        });
 
         const textVerify = await resVerify.text();
         let dataVerify;
@@ -653,6 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formJaksa.addEventListener("submit", handleSubmit);
   }
 
+  setCreateMode();
   loadBidang();      // kalau gagal, tetap pakai option statis HTML
   loadDaftarJaksa(); // tarik data jaksa existing
 });
