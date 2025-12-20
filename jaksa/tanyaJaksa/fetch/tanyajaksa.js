@@ -19,6 +19,51 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentMode = "jawab"; // "jawab" | "edit"
 
   // ====================================
+  // ✅ Helper: auth guard + redirect
+  // ====================================
+  function getToken() {
+    return localStorage.getItem("token");
+  }
+
+  function rememberReturnUrl() {
+    try {
+      sessionStorage.setItem("redirectAfterLogin", window.location.pathname + window.location.search);
+    } catch (e) {
+      // no-op
+    }
+  }
+
+  function redirectToLogin() {
+    rememberReturnUrl();
+    window.location.href = "/auth/login.html";
+  }
+
+  function requireLogin({ showAlert = true } = {}) {
+    const token = getToken();
+    if (token) return true;
+
+    if (showAlert && typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "warning",
+        title: "Login dulu ya",
+        text: "Akses halaman ini butuh login.",
+        confirmButtonText: "Login",
+        confirmButtonColor: "#6D4C41",
+      }).then(() => redirectToLogin());
+      return false;
+    }
+
+    redirectToLogin();
+    return false;
+  }
+
+  // ✅ Kunci halaman jaksa dari awal (biar gak bisa akses tanpa token)
+  // Kalau kamu memang sengaja mau halaman ini kebuka tanpa login, tinggal hapus baris ini.
+  if (!requireLogin({ showAlert: true })) {
+    return; // stop semua inisialisasi
+  }
+
+  // ====================================
   // Helper ambil field yang mungkin beda
   // ====================================
   function pickField(obj, keys, fallback = "") {
@@ -280,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `;
 
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const headers = {};
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -288,6 +333,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch(`${API_BASE}/questions`, { headers });
+
+      // ✅ kalau token invalid / expired
+      if (res.status === 401 || res.status === 403) {
+        Swal.fire({
+          icon: "warning",
+          title: "Sesi kamu habis",
+          text: "Login ulang dulu ya.",
+          confirmButtonColor: "#6D4C41",
+          confirmButtonText: "Login",
+        }).then(() => redirectToLogin());
+        return;
+      }
 
       const raw = await res.text();
       let data;
@@ -333,7 +390,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // DELETE /questions/:id
   // ====================================
   async function deleteQuestion(id) {
-    const token = localStorage.getItem("token");
+    // ✅ guard
+    if (!requireLogin({ showAlert: true })) return;
+
+    const token = getToken();
     const headers = {};
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -344,6 +404,17 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "DELETE",
         headers,
       });
+
+      if (res.status === 401 || res.status === 403) {
+        Swal.fire({
+          icon: "warning",
+          title: "Sesi kamu habis",
+          text: "Login ulang dulu ya.",
+          confirmButtonColor: "#6D4C41",
+          confirmButtonText: "Login",
+        }).then(() => redirectToLogin());
+        return;
+      }
 
       const raw = await res.text();
       let data;
@@ -376,6 +447,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // (dipakai untuk Jawab & Edit)
   // ====================================
   async function kirimJawaban() {
+    // ✅ guard
+    if (!requireLogin({ showAlert: true })) return;
+
     const pesan = jawabanText?.value.trim();
     if (!currentQuestionId) {
       Swal.fire("Error", "Tidak ada pertanyaan yang dipilih.", "error");
@@ -386,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const headers = { "Content-Type": "application/json" };
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -406,6 +480,13 @@ document.addEventListener("DOMContentLoaded", () => {
         headers,
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        Swal.fire("Sesi habis", "Login ulang dulu ya.", "warning").then(() => {
+          redirectToLogin();
+        });
+        return;
+      }
 
       const raw = await res.text();
       let data;

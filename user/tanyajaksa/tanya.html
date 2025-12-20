@@ -4,14 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tanya Jaksa | EducLex</title>
-  <!-- Konsisten dengan index: font & SweetAlert -->
+
+  <!-- CSS -->
   <link rel="stylesheet" href="/assets/style/User/tanya.css" />
+
+  <!-- Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
     rel="stylesheet"
   />
+
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
   <!-- ========== Header Navbar ========== -->
   <header>
@@ -24,6 +30,7 @@
         <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
         <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
       </ul>
+
       <div class="dropdown">
         <button class="dropbtn">👤 Akun ▾</button>
         <div class="dropdown-content" id="userMenu">
@@ -36,29 +43,44 @@
 
   <!-- ========== Main Section ========== -->
   <main class="tanya-container">
-    <h1 class="main-title" style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center;">
-  Pertanyaan & Jawaban dari Jaksa
-</h1>
-<p class="intro" style="font-weight: 400 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center; line-height: 1.6;">
-  Berikut kumpulan pertanyaan hukum dari masyarakat yang telah dijawab oleh Jaksa Kejaksaan Tinggi Jawa Barat.
-</p>
+    <h1
+      class="main-title"
+      style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center;"
+    >
+      Pertanyaan & Jawaban dari Jaksa
+    </h1>
 
-<div style="text-align: center; margin: 20px 0;">
-  <button id="btnAjukan" class="btn-ajukan" style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 12px 25px; border-radius: 8px; background: #6d4c41; color: white; border: none; cursor: pointer; transition: all 0.3s;">
-    + Ajukan Pertanyaan
-  </button>
-</div>
-
-<section class="daftar-section">
-  <h2 class="section-title" style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center;">
-    Daftar Tanya Jawab
-  </h2>
-  <div id="daftar-pertanyaan" class="daftar-pertanyaan">
-    <p style="text-align: center; color: #777; font-weight: 600 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      ⏳ Memuat data pertanyaan...
+    <p
+      class="intro"
+      style="font-weight: 400 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center; line-height: 1.6;"
+    >
+      Berikut kumpulan pertanyaan hukum dari masyarakat yang telah dijawab oleh Jaksa Kejaksaan Tinggi Jawa Barat.
     </p>
-  </div>
-</section>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <button
+        id="btnAjukan"
+        class="btn-ajukan"
+        style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 12px 25px; border-radius: 8px; background: #6d4c41; color: white; border: none; cursor: pointer; transition: all 0.3s;"
+      >
+        + Ajukan Pertanyaan
+      </button>
+    </div>
+
+    <section class="daftar-section">
+      <h2
+        class="section-title"
+        style="font-weight: 700 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4e342e; text-align: center;"
+      >
+        Daftar Tanya Jawab
+      </h2>
+
+      <div id="daftar-pertanyaan" class="daftar-pertanyaan">
+        <p style="text-align: center; color: #777; font-weight: 600 !important; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+          ⏳ Memuat data pertanyaan...
+        </p>
+      </div>
+    </section>
   </main>
 
   <!-- ======== Modal Ajukan Pertanyaan ======== -->
@@ -72,19 +94,24 @@
       <label for="namaUser" class="label-tanya">Nama Lengkap</label>
       <input type="text" id="namaUser" class="input-tanya" placeholder="Masukkan nama Anda..." />
 
-      <label for="jenis" class="label-tanya">Bidang</label>
-      <select id="jenis" class="input-tanya">
-        <option value="Pembinaan">Pembinaan</option>
-        <option value="Intelijen">Intelijen</option>
-        <option value="Pidana Umum">Pidana Umum</option>
-        <option value="Pidana Khusus">Pidana Khusus</option>
-        <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
-        <option value="Pidana Militer">Pidana Militer</option>
-        <option value="Pengawasan"> Pengawasan</option>
-        <option value="Pemulihan Aset"> Pemulihan Aset</option>
+      <!-- ✅ Dropdown 1: Jenis (Internal/Eksternal) -->
+      <label for="jenisPeraturan" class="label-tanya">Jenis</label>
+      <select id="jenisPeraturan" class="input-tanya">
+        <option value="Internal">Internal</option>
+        <option value="Eksternal">Eksternal</option>
       </select>
 
-      <label for="isiTanya" class="label-tanya">Isi Pertanyaan</label>
+      <!-- ✅ Dropdown 2: Kategori/Bidang dari /categories (tergantung jenis) -->
+      <label for="bidangKategori" class="label-tanya">Kategori Hukum (Bidang)</label>
+      <select id="bidangKategori" class="input-tanya">
+        <option value="">Memuat kategori...</option>
+      </select>
+
+      <small style="display:block; margin-top:6px; color:#6d4c41; font-family:'Open Sans', sans-serif;">
+        Pilih <b>Jenis</b> dulu, nanti kategori akan menyesuaikan otomatis.
+      </small>
+
+      <label for="isiTanya" class="label-tanya" style="margin-top:12px;">Isi Pertanyaan</label>
       <textarea
         id="isiTanya"
         class="input-tanya"
@@ -135,7 +162,9 @@
         </div>
       </div>
     </div>
+
     <hr style="margin:40px auto; width:85%; border:0.5px solid rgba(255,255,255,0.2);" />
+
     <p style="text-align:center; font-size:14px; color:#E0E0E0;">
       © 2025 <strong>EducLex</strong> | Edukasi Hukum untuk Remaja.<br />
       Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
@@ -145,7 +174,7 @@
   <!-- ========== SCRIPT ========= -->
   <script src="/user/tanyajaksa/fetch/tanya.js"></script>
 
-   <!-- Logout handler (opsional, kalau kamu pakai ini juga di index.html) -->
+  <!-- Logout handler -->
   <script src="/auth/fetch/logout.js"></script>
 </body>
 </html>

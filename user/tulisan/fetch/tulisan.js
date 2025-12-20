@@ -1,5 +1,4 @@
 // /user/tulisan/fetch/tulisan.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "http://localhost:8080";
 
@@ -8,27 +7,150 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allTulisan = [];
 
+  // 8 bidang yang harus tampil di dropdown publik
+  const FIXED_8_BIDANG = [
+    "Pembinaan",
+    "Intelijen",
+    "Pidana Umum",
+    "Pidana Khusus",
+    "Perdata dan Tata Usaha Negara",
+    "Pidana Militer",
+    "Pengawasan",
+    "Pemulihan Aset",
+  ];
+
+  // bidang map: id -> name
+  let bidangMap = new Map(); // ObjectId -> Nama Bidang
+
   // ==========================
-  // Normalisasi satu item tulisan
+  // Helpers
+  // ==========================
+  const getToken = () => localStorage.getItem("token") || "";
+  const isObjectId = (v) => /^[a-f\d]{24}$/i.test(String(v || ""));
+
+  const pickField = (obj, keys, fallback = "") => {
+    if (!obj) return fallback;
+    for (const k of keys) {
+      if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== "") {
+        return obj[k];
+      }
+    }
+    return fallback;
+  };
+
+  function setGridMessage(html) {
+    if (!grid) return;
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1;">
+        ${html}
+      </div>
+    `;
+  }
+
+  // ==========================
+  // Fetch bidang (public)
+  // ==========================
+  async function fetchBidang() {
+    const token = getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    try {
+      const res = await fetch(`${API_BASE}/bidang`, { headers });
+      const raw = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = [];
+      }
+
+      if (!res.ok) {
+        console.warn("⚠️ GET /bidang gagal:", res.status, raw);
+        return [];
+      }
+
+      if (!Array.isArray(data)) return [];
+
+      const normalized = data
+        .map((b) => {
+          const _id = b._id || b.id || "";
+          const name = String(pickField(b, ["name", "nama", "bidang"], "") || "").trim();
+          return { _id, name };
+        })
+        .filter((b) => isObjectId(b._id) && b.name);
+
+      return normalized;
+    } catch (err) {
+      console.warn("⚠️ FETCH /bidang error:", err);
+      return [];
+    }
+  }
+
+  // isi dropdown filter bidang (8 bidang)
+  async function loadBidangDropdown() {
+    if (!filterBidang) return;
+
+    filterBidang.innerHTML = `<option value="" selected>Semua Bidang</option>`;
+
+    const bidangServer = await fetchBidang();
+    bidangMap = new Map(bidangServer.map((b) => [b._id, b.name]));
+
+    const fixedLower = new Set(FIXED_8_BIDANG.map((x) => x.toLowerCase()));
+    const bidang8 = bidangServer
+      .filter((b) => fixedLower.has(b.name.toLowerCase()))
+      .sort(
+        (a, b) =>
+          FIXED_8_BIDANG.findIndex((x) => x.toLowerCase() === a.name.toLowerCase()) -
+          FIXED_8_BIDANG.findIndex((x) => x.toLowerCase() === b.name.toLowerCase())
+      );
+
+    const finalNames =
+      bidang8.length > 0
+        ? bidang8.map((b) => b.name)
+        : FIXED_8_BIDANG.slice();
+
+    finalNames.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      filterBidang.appendChild(opt);
+    });
+  }
+
+  // ==========================
+  // Normalisasi tulisan
   // ==========================
   function normalizeTulisan(t) {
-    const judul = t.judul || "-";
-    const isi = t.isi || t.content || t.deskripsi || "";
-    const penulis = t.penulis || t.author || "Jaksa";
-    const tanggal = t.tanggal || t.created_at || t.createdAt || null;
+    const judul = String(pickField(t, ["judul", "title"], "-") || "-");
+    const isi = String(pickField(t, ["isi", "content", "deskripsi", "body"], "") || "");
+    const penulis = String(pickField(t, ["penulis", "author", "nama_penulis"], "Jaksa") || "Jaksa");
+    const tanggal = pickField(t, ["tanggal", "created_at", "createdAt"], null);
 
-    // coba baca bidang/kategori dari field backend
-    let bidang =
-      t.bidang ||
-      t.kategori ||
-      t.bagian ||
-      "";
+    const bidangIdRaw = pickField(t, ["bidang_id", "bidangId", "bidangID"], "");
+    const bidangObj = t?.bidang_id && typeof t.bidang_id === "object" ? t.bidang_id : null;
 
-    // fallback: tebak bidang dari nama penulis (kalau formatnya "Asisten Bidang Intelijen", dll)
-    if (!bidang && penulis.toLowerCase().includes("intelijen")) bidang = "Intelijen";
-    if (!bidang && penulis.toLowerCase().includes("pembinaan")) bidang = "Pembinaan";
+    let bidangName = "";
 
-    return { judul, isi, penulis, tanggal, bidang };
+    const bidangStr = String(pickField(t, ["bidang", "kategori", "bagian"], "") || "").trim();
+    if (bidangStr) bidangName = bidangStr;
+
+    if (!bidangName && bidangObj) {
+      const objName = String(pickField(bidangObj, ["name", "nama", "bidang"], "") || "").trim();
+      if (objName) bidangName = objName;
+
+      const objId = bidangObj._id || bidangObj.id || "";
+      if (!bidangName && isObjectId(objId) && bidangMap.has(objId)) {
+        bidangName = bidangMap.get(objId);
+      }
+    }
+
+    if (!bidangName && isObjectId(bidangIdRaw) && bidangMap.has(bidangIdRaw)) {
+      bidangName = bidangMap.get(bidangIdRaw);
+    }
+
+    return { judul, isi, penulis, tanggal, bidang: bidangName };
   }
 
   // ==========================
@@ -37,26 +159,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTulisan() {
     if (!grid) return;
 
-    const selectedBidang = filterBidang?.value || "";
+    const selectedBidang = (filterBidang?.value || "").trim();
 
     const filtered = allTulisan.filter((t) => {
       if (!selectedBidang) return true;
-      if (!t.bidang) return false;
-      return t.bidang.toLowerCase() === selectedBidang.toLowerCase();
+      return (t.bidang || "").toLowerCase() === selectedBidang.toLowerCase();
     });
 
     if (filtered.length === 0) {
-      grid.innerHTML = `
-        <p style="grid-column:1 / -1; text-align:center; color:#c0392b;">
-          Gagal memuat tulisan.
-        </p>
-      `;
+      setGridMessage(`
+        <div class="loading-card" style="color:#6d4c41;">
+          Tidak ada tulisan untuk bidang ini.
+        </div>
+      `);
       return;
     }
 
     grid.innerHTML = filtered
       .map((t) => {
-        const tanggal = t.tanggal
+        const tanggalFormatted = t.tanggal
           ? new Date(t.tanggal).toLocaleDateString("id-ID", {
               day: "2-digit",
               month: "long",
@@ -64,18 +185,24 @@ document.addEventListener("DOMContentLoaded", () => {
             })
           : "";
 
-        const preview =
-          t.isi.length > 200 ? t.isi.slice(0, 200) + "..." : t.isi;
+        const preview = t.isi.length > 240 ? t.isi.slice(0, 240) + "..." : t.isi;
 
+        // ✅ meta kiri/kanan biar tanggal bisa nempel ujung kanan lewat CSS
         return `
           <article class="tulisan-card">
-            <h3>${t.judul}</h3>
-            <p class="meta">
-              <span>✍️ ${t.penulis}</span>
-              ${tanggal ? `<span>📅 ${tanggal}</span>` : ""}
-              ${t.bidang ? `<span>🏛️ ${t.bidang}</span>` : ""}
-            </p>
-            <p class="preview">${preview}</p>
+            <h3 class="judul-tulisan">${t.judul}</h3>
+
+            <div class="tulisan-meta">
+              <div class="meta-left">
+                <span class="penulis">✍️ ${t.penulis}</span>
+              </div>
+
+              <div class="meta-right">
+                ${tanggalFormatted ? `<span class="tanggal">📅 ${tanggalFormatted}</span>` : ""}
+              </div>
+            </div>
+
+            <p class="tulisan-snippet">${preview}</p>
           </article>
         `;
       })
@@ -83,41 +210,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================
-  // GET tulisan publik
-  // 1) coba /tulisan-public
-  // 2) kalau 404 → fallback /tulisan
+  // Fetch tulisan publik
   // ==========================
   async function fetchTulisanPublic() {
-    // coba endpoint publik dulu
     try {
       const res = await fetch(`${API_BASE}/tulisan-public`);
-
       if (res.ok) {
         const data = await res.json().catch(() => []);
         return Array.isArray(data) ? data : [];
       }
-
-      // kalau 404 → fallback ke /tulisan
-      if (res.status === 404) {
-        return await fetchTulisanFallback();
-      }
-
+      if (res.status === 404) return await fetchTulisanFallback();
       return [];
     } catch {
-      // jaringan error → coba fallback juga
       return await fetchTulisanFallback();
     }
   }
 
-  // fallback ke /tulisan (tanpa Authorization)
   async function fetchTulisanFallback() {
     try {
-      const res = await fetch(`${API_BASE}/tulisan`);
+      const token = getToken();
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      if (!res.ok) {
-        return [];
-      }
-
+      const res = await fetch(`${API_BASE}/tulisan`, { headers });
+      if (!res.ok) return [];
       const data = await res.json().catch(() => []);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -126,27 +242,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================
-  // Load data awal
+  // Load awal
   // ==========================
   async function loadTulisanPublic() {
-    if (grid) {
-      grid.innerHTML = `
-        <p style="grid-column:1 / -1; text-align:center; color:#777;">
-          ⏳ Memuat data tulisan...
-        </p>
-      `;
-    }
+    setGridMessage(`<div class="loading-card">⏳ Memuat data tulisan...</div>`);
+
+    // bidangMap harus siap dulu sebelum normalize
+    await loadBidangDropdown();
 
     const rawList = await fetchTulisanPublic();
 
     if (!rawList || rawList.length === 0) {
-      if (grid) {
-        grid.innerHTML = `
-          <p style="grid-column:1 / -1; text-align:center; color:#c0392b;">
-            Gagal memuat tulisan.
-          </p>
-        `;
-      }
+      setGridMessage(`
+        <div class="loading-card" style="color:#c0392b;">
+          Gagal memuat tulisan.
+        </div>
+      `);
       return;
     }
 
@@ -161,6 +272,5 @@ document.addEventListener("DOMContentLoaded", () => {
     filterBidang.addEventListener("change", renderTulisan);
   }
 
-  // initial load
   loadTulisanPublic();
 });

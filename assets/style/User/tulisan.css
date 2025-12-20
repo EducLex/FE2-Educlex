@@ -1,11 +1,7 @@
 /* =========================================
-   GLOBAL SETTINGS (SAMA DENGAN INDEX.CSS)
+   GLOBAL SETTINGS
 ========================================= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: "Poppins", "Open Sans", sans-serif;
@@ -16,13 +12,13 @@ body {
 }
 
 /* =========================================
-   NAVBAR (IDENTIK DENGAN INDEX)
+   NAVBAR
 ========================================= */
 .navbar {
   width: 100%;
   padding: 18px 40px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
   color: #3e2723;
   font-weight: 600;
   display: flex;
@@ -35,7 +31,7 @@ body {
 
 .navbar .logo {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 1px;
 }
 
@@ -48,20 +44,15 @@ body {
 .navbar .nav-links li a {
   text-decoration: none;
   color: #3e2723;
-  font-weight: 600;
-  transition: 0.3s;
+  font-weight: 700;
+  transition: 0.25s;
 }
 
 .navbar .nav-links li a:hover,
-.navbar .nav-links li a.active {
-  color: #6d4c41;
-}
+.navbar .nav-links li a.active { color: #6d4c41; }
 
 /* Dropdown */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
+.dropdown { position: relative; display: inline-block; }
 
 .dropbtn {
   background: #6d4c41;
@@ -70,208 +61,311 @@ body {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
+  font-weight: 700;
+  transition: 0.25s;
 }
 
-.dropbtn:hover {
-  background: #4e342e;
-}
+.dropbtn:hover { background: #4e342e; }
 
 .dropdown-content {
   display: none;
   position: absolute;
   right: 0;
   background-color: #f5f5f5;
-  min-width: 140px;
+  min-width: 160px;
   border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   z-index: 1;
+  padding: 8px;
 }
 
 .dropdown-content a {
   color: #4e342e;
-  padding: 10px 14px;
+  padding: 10px 12px;
   text-decoration: none;
   display: block;
-  border-radius: 8px;
+  border-radius: 10px;
   transition: 0.2s;
+  font-weight: 700;
 }
 
-.dropdown-content a:hover {
-  background-color: #d7ccc8;
-}
-
+.dropdown-content a:hover { background-color: #d7ccc8; }
 .dropdown:hover .dropdown-content,
-.dropdown.show .dropdown-content {
-  display: block;
-}
+.dropdown.show .dropdown-content { display: block; }
 
 /* =========================================
-   TULISAN JAKSA SECTION
+   CONTAINER
 ========================================= */
 .tulisan-container {
   padding: 60px 20px 100px;
   max-width: 1200px;
-  margin: auto;
+  margin: 20px auto 0;
   background: #fdf6f0;
   border-radius: 18px;
-  margin-top: 20px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  font-family: "Poppins", sans-serif;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
 }
 
+.tulisan-hero { text-align: center; padding: 10px 0 6px; }
+
 .tulisan-container h1 {
-  font-size: 2rem;
-  margin-bottom: 12px;
+  font-size: 2.1rem;
+  margin-bottom: 10px;
   color: #4e342e;
-  text-align: center;
+  font-weight: 800;
 }
 
 .tulisan-container .intro {
   text-align: center;
   color: #6d4c41;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   font-size: 1rem;
 }
 
-/* Filter Section */
+/* =========================================
+   TOOLBAR
+========================================= */
+.toolbar { margin: 12px auto 6px; }
+
 .filter-section {
-  margin: 20px auto;
+  margin: 12px auto;
   max-width: 1100px;
-  padding: 15px;
+  padding: 14px 14px;
   background: #f5ebe1;
-  border-radius: 10px;
+  border: 1px solid #f0dfd4;
+  border-radius: 14px;
   display: flex;
-  gap: 15px;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .filter-section label {
-  font-weight: 600;
+  font-weight: 800;
   color: #3b2f2f;
   white-space: nowrap;
 }
 
 .filter-section select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #b08968;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid #d7ccc8;
   font-size: 14px;
   font-family: "Poppins", sans-serif;
   background: #fff;
   cursor: pointer;
-  min-width: 180px;
+  min-width: 220px;
+  outline: none;
 }
 
-/* Grid Tulisan */
+.filter-section select:focus {
+  border-color: #b08968;
+  box-shadow: 0 0 0 4px rgba(176, 137, 104, 0.18);
+}
+
+.filter-right {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.search-wrap input {
+  width: 100%;
+  padding: 11px 12px 11px 38px;
+  border-radius: 12px;
+  border: 2px solid #d7ccc8;
+  outline: none;
+  font-family: "Poppins", sans-serif;
+  background: #fff;
+}
+
+.search-wrap input:focus {
+  border-color: #b08968;
+  box-shadow: 0 0 0 4px rgba(176, 137, 104, 0.18);
+}
+
+/* =========================================
+   GRID
+========================================= */
 .tulisan-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  padding: 0 20px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  padding: 14px 16px 0;
+  margin-top: 8px;
 }
 
+/* Loading */
+.loading-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0dfd4;
+  padding: 16px;
+  text-align: center;
+  color: #6d4c41;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* =========================================
+   CARD — desain awal kamu, tapi dipertegas sekatnya
+========================================= */
 .tulisan-card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: transform 0.25s, box-shadow 0.25s;
-  overflow: hidden;
-  padding: 20px;
-  text-align: center;
+  border-radius: 16px;
+  border: 1px solid #e7d3c7;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+  padding: 16px 16px 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
 }
 
 .tulisan-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.10);
 }
 
-.pdf-icon-container {
-  display: flex;
-  justify-content: center;
-  margin: 15px 0;
-}
-
-.pdf-icon {
-  width: auto;
-  height: 60px;
-  object-fit: contain;
-}
-
+/* JUDUL */
 .judul-tulisan {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #3e2723;
-  margin: 10px 0;
-  line-height: 1.4;
-  min-height: 60px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #4e342e;
+  margin-bottom: 10px;
+  line-height: 1.35;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(109, 76, 65, 0.14); /* sekat tegas judul */
 }
 
-.penulis {
-  font-size: 0.9rem;
-  color: #6d4c41;
-  font-style: italic;
-  margin: 8px 0;
-}
-
-.tanggal {
-  font-size: 0.85rem;
-  color: #757575;
+/* META: penulis + tanggal + (kalau ada) bidang */
+.tulisan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
   margin-bottom: 12px;
 }
 
+/* badge yang cantik (buat bidang kalau tulisan.js kamu masukkan) */
+.tulisan-badge {
+  background: #f9f3ef;
+  border: 1px solid rgba(109, 76, 65, 0.18);
+  color: #6d4c41;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+/* penulis & tanggal */
+.penulis {
+  font-size: 0.9rem;
+  color: #6d4c41;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tanggal {
+  font-size: 0.9rem;
+  color: #7b6a64;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* SEKAT kecil di antara meta item (optional visual) */
+.meta-sep {
+  width: 6px;
+  height: 6px;
+  background: rgba(109, 76, 65, 0.35);
+  border-radius: 999px;
+}
+
+/* ISI */
+.tulisan-snippet {
+  background: #fbf4ee;
+  border: 1px solid rgba(109, 76, 65, 0.14);
+  border-radius: 12px;
+  padding: 12px 12px;
+  color: #3f3f3f;
+  font-size: 0.96rem;
+  line-height: 1.7;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Button */
 .btn-group {
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .tulisan-card .btn {
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 9px 12px;
+  font-size: 0.86rem;
+  font-weight: 800;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   transition: all 0.2s;
 }
 
 .btn-lihat {
-  background: #a1887f;
-  color: white;
+  background: #6d4c41;
+  color: #fff;
 }
 
 .btn-lihat:hover {
-  background: #bcaaa4;
-  transform: scale(1.03);
+  background: #8d6e63;
+  transform: scale(1.01);
 }
 
 .btn-unduh {
-  background: #6d4c41;
-  color: white;
+  background: #a1887f;
+  color: #fff;
 }
 
 .btn-unduh:hover {
-  background: #8d6e63;
-  transform: scale(1.03);
+  background: #bcaaa4;
+  transform: scale(1.01);
 }
 
 /* =========================================
-   FOOTER (IDENTIK DENGAN INDEX)
+   FOOTER
 ========================================= */
 footer {
   font-family: "Poppins", sans-serif;
@@ -291,7 +385,7 @@ footer .footer-container {
 }
 
 footer h3 {
-  font-weight: 600;
+  font-weight: 800;
   border-left: 4px solid #8d6e63;
   padding-left: 8px;
   margin-bottom: 12px;
@@ -304,9 +398,7 @@ footer p, footer a {
   line-height: 1.6;
 }
 
-footer a:hover {
-  color: #d7ccc8;
-}
+footer a:hover { color: #d7ccc8; }
 
 footer .social-icons {
   display: flex;
@@ -315,10 +407,7 @@ footer .social-icons {
   margin-top: 10px;
 }
 
-footer .social-icons img {
-  width: 20px;
-  height: 20px;
-}
+footer .social-icons img { width: 20px; height: 20px; }
 
 footer hr {
   margin: 40px auto;
@@ -337,26 +426,38 @@ footer p:last-child {
    RESPONSIVE
 ========================================= */
 @media (max-width: 768px) {
-  .navbar {
-    padding: 16px 20px;
-  }
+  .navbar { padding: 16px 20px; }
+
   .navbar .nav-links {
     gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-  .tulisan-container {
-    padding: 40px 15px 80px;
-  }
+
+  .tulisan-container { padding: 40px 14px 80px; }
+
   .filter-section {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 10px;
   }
+
+  .filter-right { justify-content: stretch; }
+  .search-wrap { max-width: 100%; }
+
   .tulisan-grid {
     grid-template-columns: 1fr;
-    padding: 0 15px;
+    padding: 0 10px;
   }
+
   .btn-group {
     flex-direction: column;
-    gap: 6px;
+    align-items: stretch;
+  }
+
+  .tulisan-card .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -366,11 +467,183 @@ footer p:last-child {
     gap: 12px;
     padding: 12px 15px;
   }
-  .navbar .nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .pdf-icon {
-    height: 45px;
-  }
+}
+
+
+
+/* =========================================
+   CARD — SEKAT JELAS (override)
+========================================= */
+.tulisan-card{
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e7d3c7;
+  box-shadow:0 8px 18px rgba(0,0,0,0.06);
+  padding:16px 16px 14px;
+  transition:transform .15s ease, box-shadow .15s ease;
+  overflow: hidden;
+}
+
+.tulisan-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 24px rgba(0,0,0,0.10);
+}
+
+/* Judul: kasih garis pembatas bawah */
+.tulisan-card .judul-tulisan,
+.tulisan-card .tulisan-title{
+  font-size:1.15rem;
+  font-weight:800;
+  color:#4e342e;
+  line-height:1.35;
+
+  padding-bottom:10px;
+  margin-bottom:10px;
+  border-bottom:2px solid rgba(109, 76, 65, 0.16);
+}
+
+/* Meta: penulis + tanggal, kasih dashed separator */
+.tulisan-card .tulisan-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+
+  padding-bottom:10px;
+  margin-bottom:12px;
+  border-bottom:1px dashed rgba(109, 76, 65, 0.28);
+}
+
+/* Kalau tulisan.js kamu TIDAK membungkus meta di .tulisan-meta,
+   kita pakai trik: penulis/tanggal dibuat inline-block dan garis pemisah muncul lewat pseudo-element */
+.tulisan-card .penulis,
+.tulisan-card .tanggal{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+
+  font-size:0.9rem;
+  font-weight:800;
+  color:#6d4c41;
+}
+
+/* Jika penulis+tanggal tidak dibungkus .tulisan-meta,
+   tambahkan garis pemisah setelah tanggal (jadi meta punya "sekat" secara visual) */
+.tulisan-card .tanggal::after{
+  content:"";
+  display:block;
+  width:100%;
+  height:0;
+  border-bottom:1px dashed rgba(109, 76, 65, 0.28);
+  margin-top:10px;
+}
+
+/* Isi: jadi blok tersendiri biar gak nyampur */
+.tulisan-card .tulisan-snippet,
+.tulisan-card .isi-tulisan,
+.tulisan-card p:last-of-type{
+  background:#fbf4ee;
+  border:1px solid rgba(109, 76, 65, 0.14);
+  border-radius:12px;
+  padding:12px;
+
+  color:#3f3f3f;
+  font-size:0.96rem;
+  line-height:1.7;
+
+  margin-top:12px;
+
+  /* clamp biar rapi */
+  display:-webkit-box;
+  -webkit-line-clamp:4;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.tulisan-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.meta-left, .meta-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* biar tanggal bener-bener ke kanan */
+.meta-right{
+  margin-left:auto;
+}
+
+
+/* HAPUS garis putus-putus di area meta (penulis + tanggal) */
+.tulisan-meta{
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 12px; /* tetap kasih jarak biar rapi */
+}
+
+/* Kalau kamu masih mau ada pemisah, pake garis tipis solid di bawah meta */
+.tulisan-meta{
+  border-bottom: 1px solid rgba(109, 76, 65, 0.14) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+/* Pastikan meta tetap kiri/kanan */
+.tulisan-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.meta-left, .meta-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.meta-right{ margin-left:auto; }
+
+
+/* === FORCE: hilangkan garis putus-putus di area tanggal === */
+.tulisan-card .tanggal,
+.tulisan-card .meta-right,
+.tulisan-card .meta-right *,
+.tulisan-card .tanggal * {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  text-decoration: none !important;
+  background-image: none !important;
+}
+
+/* kalau garisnya dibuat pakai pseudo element */
+.tulisan-card .tanggal::before,
+.tulisan-card .tanggal::after,
+.tulisan-card .meta-right::before,
+.tulisan-card .meta-right::after,
+.tulisan-card .meta-right *::before,
+.tulisan-card .meta-right *::after {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+/* pastikan tanggal benar-benar nempel ke kanan */
+.tulisan-meta{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.meta-right{
+  margin-left: auto;
+  justify-content: flex-end;
+  text-align: right;
+  white-space: nowrap;
 }
