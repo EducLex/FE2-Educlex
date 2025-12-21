@@ -1,4 +1,4 @@
-// ===============================
+ // ===============================
 // GLOBAL CONFIG (biar bisa dipakai semua blok)
 // ===============================
 const apiBase = "http://localhost:8080";
@@ -23,11 +23,206 @@ if (typeof showAlert !== "function") {
 }
 
 // ===============================
+// ROUTE GUARD
+// HANYA tanya.html yang wajib login
+// halaman lain tetap publik
+// ===============================
+const PROTECTED_PATHS = new Set(["/user/tanyajaksa/tanya.html"]);
+
+// ==================================================
+// Base64URL decode helper (FIX JWT decoding)
+// ==================================================
+function base64UrlDecode(str) {
+  try {
+    if (!str) return null;
+    let s = String(str).replace(/-/g, "+").replace(/_/g, "/");
+    const pad = s.length % 4;
+    if (pad) s += "=".repeat(4 - pad);
+    return atob(s);
+  } catch (_) {
+    return null;
+  }
+}
+
+function decodeJwtPayload(token) {
+  try {
+    const parts = String(token || "").split(".");
+    if (parts.length !== 3) return null;
+
+    const decoded = base64UrlDecode(parts[1]);
+    if (!decoded) return null;
+
+    return JSON.parse(decoded);
+  } catch (_) {
+    return null;
+  }
+}
+
+// ==================================================
+// TOKEN HELPERS
+// - Guard: boleh pakai session/local (biar admin/jaksa tetap dianggap login)
+// - User token sengaja tidak disimpan di localStorage (lihat saveAuth)
+// ==================================================
+function getAnyToken() {
+  const t = sessionStorage.getItem("token") || localStorage.getItem("token");
+  if (!t) return null;
+  const s = String(t).trim();
+  if (!s || s === "null" || s === "undefined") return null;
+  return s;
+}
+
+function hasValidLogin() {
+  const token = getAnyToken();
+  if (!token) return false;
+
+  const payload = decodeJwtPayload(token);
+  if (!payload || payload.exp == null) return false;
+
+  const exp = Number(payload.exp);
+  if (!Number.isFinite(exp)) return false;
+
+  const ok = Date.now() < exp * 1000;
+  if (!ok) {
+    try {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("role");
+      sessionStorage.removeItem("displayName");
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("displayName");
+    } catch (_) {}
+  }
+  return ok;
+}
+
+function isLoginPage() {
+  return window.location.pathname.includes("/auth/login.html");
+}
+
+function guardProtectedRoutes() {
+  // cuma lock tanya.html
+  if (!PROTECTED_PATHS.has(window.location.pathname)) return;
+  if (isLoginPage()) return;
+
+  if (!hasValidLogin()) {
+    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/auth/login.html?redirect=${redirect}`;
+  }
+}
+
+// ==================================================
+// Extract Role + Display Name
+// ==================================================
+function extractRoleFromResponse(data, token) {
+  let role =
+    data?.role ||
+    data?.user?.role ||
+    data?.data?.role ||
+    (Array.isArray(data?.roles) ? data.roles[0] : null);
+
+  if (!role && token) {
+    const payload = decodeJwtPayload(token);
+    role = payload?.role || payload?.roles?.[0] || payload?.authorities?.[0] || null;
+  }
+  return role || null;
+}
+
+function extractDisplayName(data, token) {
+  const name =
+    data?.name ||
+    data?.nama ||
+    data?.fullname ||
+    data?.username ||
+    data?.user?.name ||
+    data?.user?.nama ||
+    data?.user?.fullname ||
+    data?.user?.username ||
+    data?.data?.name ||
+    data?.data?.nama ||
+    data?.data?.fullname ||
+    data?.data?.username ||
+    null;
+
+  if (name) return String(name);
+
+  const payload = token ? decodeJwtPayload(token) : null;
+  const fromJwt =
+    payload?.name ||
+    payload?.nama ||
+    payload?.fullname ||
+    payload?.username ||
+    payload?.email ||
+    null;
+
+  return fromJwt ? String(fromJwt) : null;
+}
+
+// ==================================================
+// NORMALIZE ROLE
+// ==================================================
+function normalizeRole(role) {
+  if (!role) return null;
+  const r = String(role).toLowerCase().trim();
+  if (r === "admin") return "admin";
+  if (r === "jaksa" || r === "prosecutor") return "jaksa";
+  return "user";
+}
+
+// ==================================================
+// Save auth:
+// - sessionStorage ALWAYS: token, role, displayName
+// - localStorage:
+//   - admin/jaksa: token+role+displayName (biar dashboard tetap jalan)
+//   - user: SIMPAN displayName SAJA (navbar semua halaman bisa tampil Ayu), token/role local dibersihin
+// ==================================================
+function saveAuth(token, role, displayName) {
+  const nr = normalizeRole(role);
+
+  try {
+    if (token) sessionStorage.setItem("token", token);
+    if (nr) sessionStorage.setItem("role", nr);
+    if (displayName) sessionStorage.setItem("displayName", displayName);
+  } catch (_) {}
+
+  try {
+    if (nr === "admin" || nr === "jaksa") {
+      if (token) localStorage.setItem("token", token);
+      if (nr) localStorage.setItem("role", nr);
+      if (displayName) localStorage.setItem("displayName", displayName);
+    } else {
+      // user: jangan simpan token di localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      if (displayName) localStorage.setItem("displayName", displayName);
+    }
+  } catch (_) {}
+}
+
+// ==================================================
+// Navbar label
+// - sessionStorage dulu, fallback localStorage
+// ==================================================
+function getDisplayNameAny() {
+  const s = (sessionStorage.getItem("displayName") || "").trim();
+  if (s) return s;
+  const l = (localStorage.getItem("displayName") || "").trim();
+  return l || "";
+}
+
+function applyAkunLabel() {
+  const btn = document.querySelector(".dropbtn");
+  if (!btn) return;
+
+  const name = getDisplayNameAny();
+  btn.textContent = name ? `👤 ${name} ▾` : "👤 Akun ▾";
+}
+
+// ===============================
 // Helpers redirect
 // ===============================
 function safeRedirectTarget(raw) {
   if (!raw) return null;
-  // hanya allow path internal
   if (raw.startsWith("/")) return raw;
   return null;
 }
@@ -50,45 +245,63 @@ function clearRedirectSession() {
   } catch (_) {}
 }
 
-function extractRoleFromResponse(data, token) {
-  let role =
-    data.role ||
-    data.user?.role ||
-    data.data?.role ||
-    (Array.isArray(data.roles) ? data.roles[0] : null);
-
-  if (!role && token && token.split(".").length === 3) {
-    try {
-      const payloadStr = atob(token.split(".")[1]);
-      const payload = JSON.parse(payloadStr);
-      role = payload.role || payload.roles?.[0] || payload.authorities?.[0] || null;
-    } catch (e) {
-      console.warn("Gagal decode JWT untuk ambil role:", e);
-    }
-  }
-  return role || null;
-}
-
+// ✅ sesuai request:
+// - admin -> dashboard admin
+// - jaksa -> dashboard jaksa
+// - user -> tanya.html (default)
 function getRedirectByRole(role) {
-  if (!role) return "/index.html";
-  const r = role.toString().toLowerCase();
-  if (r === "admin") return "/admin/dashboard/dbadmin.html";
-  if (r === "jaksa" || r === "prosecutor") return "/jaksa/dashboard/dbjaksa.html";
-  return "/index.html";
+  const nr = normalizeRole(role);
+  if (nr === "admin") return "/admin/dashboard/dbadmin.html";
+  if (nr === "jaksa") return "/jaksa/dashboard/dbjaksa.html";
+  return "/user/tanyajaksa/tanya.html";
 }
 
 function finalizeLoginRedirect(role) {
+  const nr = normalizeRole(role);
   const redirectTarget = getRedirectTargetFromUrlOrSession();
   clearRedirectSession();
 
-  const fallback = getRedirectByRole(role);
+  // admin/jaksa selalu dashboard
+  if (nr === "admin" || nr === "jaksa") {
+    window.location.href = getRedirectByRole(nr);
+    return;
+  }
+
+  // user: kalau redirectTarget ada, boleh dipakai (biasanya tanya.html karena guard)
+  // tapi default tetap tanya.html sesuai request
+  const fallback = "/user/tanyajaksa/tanya.html";
   window.location.href = redirectTarget || fallback;
+}
+
+// ===============================
+// Update menu login/logout (kalau elemennya ada)
+// ===============================
+function updateNavbarMenuIfExists() {
+  const loginLink = document.getElementById("loginLink");
+  const logoutBtn = document.getElementById("btn-logout");
+
+  if (loginLink) {
+    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+    loginLink.href = `/auth/login.html?redirect=${redirect}`;
+  }
+
+  const loggedIn = hasValidLogin();
+  if (loginLink) loginLink.style.display = loggedIn ? "none" : "block";
+  if (logoutBtn) logoutBtn.style.display = loggedIn ? "block" : "none";
+
+  applyAkunLabel();
 }
 
 // ===============================
 // MAIN DOM READY
 // ===============================
 document.addEventListener("DOMContentLoaded", () => {
+  // ✅ hanya tanya.html yang diproteksi
+  guardProtectedRoutes();
+
+  // ✅ halaman publik tetap aman, cuma update navbar
+  updateNavbarMenuIfExists();
+
   // ELEMEN LOGIN & RESET PASSWORD
   const loginForm = document.getElementById("loginForm");
   const loginFormContainer = document.getElementById("login-form-container");
@@ -141,13 +354,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const token = data.token || data.access_token || data.data?.token || null;
-        if (token) localStorage.setItem("token", token);
-
         const role = extractRoleFromResponse(data, token);
-        if (role) localStorage.setItem("role", role);
+        const displayName = extractDisplayName(data, token);
+
+        saveAuth(token, role, displayName);
 
         showAlert("Login berhasil!", "success");
-
         setTimeout(() => finalizeLoginRedirect(role), 600);
       } catch (err) {
         console.error("❌ FETCH ERROR LOGIN:", err);
@@ -330,11 +542,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ✅ tambahan: Google Login (bukan register)
   const googleLoginBtn = document.getElementById("googleLoginBtn");
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener("click", () => {
-      localStorage.removeItem("googleRegisterMode"); // login mode
+      localStorage.removeItem("googleRegisterMode");
       window.location.href = `${apiBase}/auth/google/login`;
     });
   }
@@ -380,23 +591,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // 2) GOOGLE LOGIN MODE -> simpan token, redirect balik
+  // 2) GOOGLE LOGIN MODE -> simpan token, redirect
   if (googleToken) {
-    localStorage.setItem("token", googleToken);
+    const payload = decodeJwtPayload(googleToken);
+    const role = payload?.role || payload?.roles?.[0] || null;
 
-    // optional: coba ambil role dari token
-    let role = null;
-    try {
-      if (googleToken.split(".").length === 3) {
-        const payload = JSON.parse(atob(googleToken.split(".")[1]));
-        role = payload.role || payload.roles?.[0] || null;
-      }
-    } catch (_) {}
+    const displayName =
+      extractDisplayName({ email: googleEmail }, googleToken) || googleEmail || null;
 
-    if (role) localStorage.setItem("role", role);
+    saveAuth(googleToken, role, displayName);
 
     showAlert("Login Google berhasil!", "success");
-
     setTimeout(() => finalizeLoginRedirect(role), 600);
   }
 })();

@@ -11,7 +11,7 @@
     rel="stylesheet"
   />
 
-  <!-- ✅ Font Awesome (perbaiki spasi & integrity opsional) -->
+  <!-- ✅ Font Awesome -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -24,32 +24,36 @@
   <!-- ✅ CSS utama -->
   <link rel="stylesheet" href="./assets/style/index.css" />
 </head>
+
 <body>
   <!-- Navbar -->
-<header>
-  <nav class="navbar">
-    <div class="logo">EducLex</div>
-  <ul class="nav-links">
-    <li><a href="/index.html">Beranda</a></li>
-    <li><a href="/user/artikel/artikel.html" class="active">Artikel</a></li>
-    <li><a href="/user/tanyajaksa/tanya.html">Tanya Jaksa</a></li>
-    <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
-    <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
-  </ul>
+  <header>
+    <nav class="navbar">
+      <div class="logo">EducLex</div>
 
-    <!-- Dropdown User -->
-    <div class="dropdown">
-      <button class="dropbtn">👤 Akun ▾</button>
-      <div class="dropdown-content" id="userMenu">
-        <a href="auth/login.html" id="loginLink">🔑 Login</a>
+      <ul class="nav-links">
+        <li><a href="/index.html" class="active">Beranda</a></li>
+        <li><a href="/user/artikel/artikel.html">Artikel</a></li>
+        <li><a href="/user/tanyajaksa/tanya.html">Tanya Jaksa</a></li>
+        <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
+        <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
+      </ul>
 
-        <!-- 🔥 Logout utama (dipanggil juga oleh navbar logout) -->
-        <a href="#" id="btn-logout">🚪 Logout</a>
+      <!-- Dropdown User -->
+      <div class="dropdown">
+        <!-- default label, nanti login.js akan ubah jadi 👤 Ayu ▾ -->
+        <button class="dropbtn" type="button">👤 Akun ▾</button>
+
+        <div class="dropdown-content" id="userMenu">
+          <!-- ✅ Penting: login.js butuh ini untuk set redirect -->
+          <a href="/auth/login.html" id="loginLink">🔑 Login</a>
+
+          <!-- ✅ Logout utama -->
+          <a href="#" id="btn-logout">🚪 Logout</a>
+        </div>
       </div>
-    </div>
-  </nav>
-</header>
-
+    </nav>
+  </header>
 
   <!-- Hero Section -->
   <section class="hero" id="hero">
@@ -57,7 +61,9 @@
     <div class="hero-text">
       <h1>EducLex</h1>
       <p>Sistem Edukasi Hukum Digital untuk Remaja</p>
-      <a href="/user/artikel/artikel.html" class="cta-btn require-login">Mulai Jelajahi</a>
+
+      <!-- halaman publik: gak perlu class require-login -->
+      <a href="/user/artikel/artikel.html" class="cta-btn">Mulai Jelajahi</a>
     </div>
   </section>
 
@@ -68,22 +74,25 @@
       <div class="card">
         <h3>📚 Artikel Hukum</h3>
         <p>Baca artikel populer tentang hukum yang relevan dengan remaja.</p>
-        <a href="/user/artikel/artikel.html" class="btn-link require-login">Lihat Artikel</a>
+        <a href="/user/artikel/artikel.html" class="btn-link">Lihat Artikel</a>
       </div>
+
       <div class="card">
         <h3>💬 Tanya Jaksa</h3>
         <p>Kirim pertanyaan dan dapatkan jawaban langsung dari jaksa.</p>
-        <a href="/user/tanyajaksa/tanya.html" class="btn-link require-login">Mulai Bertanya</a>
+        <a href="/user/tanyajaksa/tanya.html" class="btn-link">Mulai Bertanya</a>
       </div>
+
       <div class="card">
         <h3>✍️ Tulisan Jaksa</h3>
         <p>Simak tulisan-tulisan inspiratif dari para jaksa.</p>
-        <a href="/user/tulisan/tulisan.html" class="btn-link require-login">Baca Tulisan</a>
+        <a href="/user/tulisan/tulisan.html" class="btn-link">Baca Tulisan</a>
       </div>
+
       <div class="card">
         <h3>⚖️ Peraturan</h3>
         <p>Pelajari pasal-pasal hukum yang relevan dengan kasus sehari-hari.</p>
-        <a href="/user/peraturan/peraturan.html" class="btn-link require-login">Lihat Peraturan</a>
+        <a href="/user/peraturan/peraturan.html" class="btn-link">Lihat Peraturan</a>
       </div>
     </div>
   </section>
@@ -136,19 +145,13 @@
     </p>
   </footer>
 
-  <!-- Custom Alert Modal (tidak digunakan jika pakai Swal) -->
-  <div id="custom-alert" class="custom-alert">
-    <div class="custom-alert-content">
-      <p id="alert-message"></p>
-      <button onclick="closeAlert()">Tutup</button>
-    </div>
-  </div>
-
-  <!-- ✅ Script Utama -->
+  <!-- ✅ Script Utama (kalau ini error, bisa bikin logout.js gak jalan) -->
   <script src="script.js"></script>
 
-  <!-- ✅ Logout Handler -->
+  <!-- ✅ login.js (biar label Akun jadi Ayu, dan toggle login/logout) -->
+  <script src="/auth/fetch/login.js"></script>
+
+  <!-- ✅ Logout -->
   <script src="/auth/fetch/logout.js"></script>
-  
 </body>
 </html>

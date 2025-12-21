@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Artikel Hukum Populer | EducLex</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artikel Hukum Populer | EducLex</title>
 
-<!-- Style Baru -->
-<link rel="stylesheet" href="/assets/style/User/artikel.css">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-
+  <link rel="stylesheet" href="/assets/style/User/artikel.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 </head>
-<body>
 
+<body>
 <header>
   <nav class="navbar">
     <div class="logo">EducLex</div>
@@ -24,19 +22,20 @@
       <li><a href="/user/peraturan/peraturan.html">Peraturan</a></li>
     </ul>
 
-    <!-- Dropdown User (sama persis dengan index) -->
+    <!-- Dropdown User (dibikin konsisten dengan index) -->
     <div class="dropdown">
-      <button class="dropbtn">👤 User ▾</button>
+      <button class="dropbtn" type="button">👤 Akun ▾</button>
       <div class="dropdown-content" id="userMenu">
+        <!-- ✅ wajib ada untuk login.js -->
+        <a href="/auth/login.html" id="loginLink">🔑 Login</a>
+        <!-- ✅ logout -->
         <a href="#" id="btn-logout">🚪 Logout</a>
       </div>
     </div>
   </nav>
 </header>
 
-
 <main class="artikel-container artikel-page">
-
   <h1>Artikel Hukum Populer</h1>
   <p style="margin-bottom:20px;">Kumpulan artikel edukatif seputar hukum untuk remaja & masyarakat.</p>
 
@@ -51,14 +50,13 @@
       <option value="Pidana Khusus">Pidana Khusus</option>
       <option value="Perdata dan Tata Usaha Negara">Perdata dan Tata Usaha Negara</option>
       <option value="Pidana Militer">Pidana Militer</option>
-      <option value="Pengawasan"> Pengawasan</option>
-      <option value="Pemulihan Aset"> Pemulihan Aset</option>
+      <option value="Pengawasan">Pengawasan</option>
+      <option value="Pemulihan Aset">Pemulihan Aset</option>
     </select>
   </div>
 
   <!-- LIST ARTIKEL -->
   <div class="artikel-grid" id="artikelList"></div>
-
 </main>
 
 <!-- Modal Detail Artikel -->
@@ -73,7 +71,6 @@
 </div>
 
 <!-- Footer -->
-<!-- Footer Utama (disamakan dengan index) -->
 <footer style="background-color:#5d4037; color:white; padding:40px 0; font-family:'Poppins', sans-serif; margin-top:60px;">
   <div style="max-width:1200px; margin:auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:40px; text-align:center;">
     <div>
@@ -122,9 +119,13 @@
   </p>
 </footer>
 
+<!-- script halaman -->
 <script src="/user/artikel/fetch/artikel.js"></script>
 
-<!-- ✅ Logout Handler -->
+<!-- ✅ login.js: update label akun + toggle login/logout -->
+<script src="/auth/fetch/login.js"></script>
+
+<!-- ✅ logout -->
 <script src="/auth/fetch/logout.js"></script>
 </body>
 </html>

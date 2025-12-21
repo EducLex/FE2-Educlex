@@ -1,5 +1,4 @@
 // /user/tanyajaksa/fetch/tanya.js
-
 (() => {
   const API_BASE = "http://localhost:8080";
   console.log("✅ [tanya.js] loaded", new Date().toLocaleString());
@@ -8,64 +7,102 @@
     return document.getElementById(id);
   }
 
-  // =========================
-  // Token helpers
-  // =========================
-  function getToken() {
-    const t = localStorage.getItem("token");
+  // ==================================================
+  // AUTH: LOGIN VALID HANYA DARI sessionStorage
+  // ==================================================
+  function getSessionToken() {
+    const t = sessionStorage.getItem("token");
     if (!t) return null;
     const s = String(t).trim();
     if (!s || s === "null" || s === "undefined") return null;
     return s;
   }
 
-  function decodeJwtPayload(token) {
+  function base64UrlDecode(str) {
     try {
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-      const base64Url = parts[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const json = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(json);
+      if (!str) return null;
+      let s = String(str).replace(/-/g, "+").replace(/_/g, "/");
+      const pad = s.length % 4;
+      if (pad) s += "=".repeat(4 - pad);
+      return atob(s);
     } catch {
       return null;
     }
   }
 
-  function isTokenExpired(token) {
-    const payload = decodeJwtPayload(token);
-    if (!payload || !payload.exp) return false;
-    return Date.now() >= Number(payload.exp) * 1000;
+  function decodeJwtPayload(token) {
+    try {
+      const parts = String(token || "").split(".");
+      if (parts.length !== 3) return null;
+
+      const decoded = base64UrlDecode(parts[1]);
+      if (!decoded) return null;
+
+      return JSON.parse(decoded);
+    } catch {
+      return null;
+    }
   }
 
   function hasValidLogin() {
-    const token = getToken();
+    const token = getSessionToken();
     if (!token) return false;
-    if (isTokenExpired(token)) return false;
-    return true;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload || payload.exp == null) return false;
+
+    const exp = Number(payload.exp);
+    if (!Number.isFinite(exp)) return false;
+
+    const ok = Date.now() < exp * 1000;
+    if (!ok) {
+      try {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("displayName");
+        sessionStorage.removeItem("role");
+      } catch {}
+    }
+    return ok;
   }
 
-  function rememberReturnUrl(openModal = false) {
-    try {
-      sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
-      if (openModal) sessionStorage.setItem("openAjukanAfterLogin", "1");
-    } catch {}
-  }
-
-  function redirectToLogin(openModal = false) {
-    rememberReturnUrl(openModal);
+  function redirectToLogin() {
     const redirect = encodeURIComponent(location.pathname + location.search);
-    const open = openModal ? "ajukan" : "";
-    location.href = `/auth/login.html?redirect=${redirect}&open=${open}`;
+    location.href = `/auth/login.html?redirect=${redirect}`;
+  }
+
+  // ==================================================
+  // Navbar: label Akun -> Nama user
+  // fallback: sessionStorage -> localStorage
+  // ==================================================
+  function getDisplayNameAny() {
+    const s = (sessionStorage.getItem("displayName") || "").trim();
+    if (s) return s;
+    const l = (localStorage.getItem("displayName") || "").trim();
+    return l || "";
+  }
+
+  function updateAkunLabel() {
+    const btn = document.querySelector(".dropbtn");
+    if (btn) {
+      const name = getDisplayNameAny();
+      btn.textContent = name ? `👤 ${name} ▾` : "👤 Akun ▾";
+    }
+
+    // optional: toggle menu login/logout kalau elemennya ada
+    const loginLink = document.getElementById("loginLink");
+    const logoutBtn = document.getElementById("btn-logout");
+    const logged = hasValidLogin();
+
+    if (loginLink) {
+      const redirect = encodeURIComponent(location.pathname + location.search);
+      loginLink.href = `/auth/login.html?redirect=${redirect}`;
+      loginLink.style.display = logged ? "none" : "block";
+    }
+    if (logoutBtn) logoutBtn.style.display = logged ? "block" : "none";
   }
 
   // =========================
-  // fetch with timeout (anti-stuck)
+  // fetch with timeout
   // =========================
   async function fetchWithTimeout(url, options = {}, ms = 12000) {
     const controller = new AbortController();
@@ -77,9 +114,6 @@
     }
   }
 
-  // =========================
-  // Helpers umum
-  // =========================
   function pickField(obj, keys, fallback = "") {
     if (!obj) return fallback;
     for (const k of keys) {
@@ -88,23 +122,34 @@
     return fallback;
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    // ================
-    // DOM elements
-    // ================
+  // ==================================================
+  // INIT helper (works even if DOMContentLoaded already fired)
+  // ==================================================
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn);
+    } else {
+      fn();
+    }
+  }
+
+  onReady(() => {
     const modal = $("modalTanya");
-    const btnAjukan = $("btnAjukan");
+    let btnAjukan = $("btnAjukan");
     const btnTutup = $("tutupModal");
     const btnKirim = $("kirimTanya");
     const listContainer = $("daftar-pertanyaan");
 
-    const selectJenis = $("jenisPeraturan");     // dropdown jenis (Internal/Eksternal)
-    const selectKategori = $("bidangKategori");  // dropdown kategori/subkategori
-
+    const selectJenis = $("jenisPeraturan");
+    const selectKategori = $("bidangKategori");
     const inputNama = $("namaUser");
     const inputIsi = $("isiTanya");
 
-    // guard basic
+    // pastiin modal mulai dari tutup
+    if (modal) modal.style.display = "none";
+
+    updateAkunLabel();
+
     if (!listContainer) {
       console.error("❌ [tanya.js] Element #daftar-pertanyaan tidak ditemukan. Cek id HTML.");
       return;
@@ -113,40 +158,76 @@
     let allQuestions = [];
     let allCategories = [];
 
-    if (modal) modal.style.display = "none";
-
-    // ==========================
-    // 1) LOGIN GUARD: hanya Ajukan & Kirim yang wajib login
-    // ==========================
-    // Capture listener supaya ngalahin event lain yang mungkin masih kepasang
-    document.addEventListener(
-      "click",
-      (e) => {
-        const hit = e.target?.closest?.("#btnAjukan");
-        if (!hit) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
+    // ==================================================
+    // 🔥 PENCEGAH MODAL “KEBUKA SENDIRI” SAAT BELUM LOGIN
+    // Ini ngeblok semua script lain yang mungkin buka modal.
+    // ==================================================
+    if (modal && typeof MutationObserver !== "undefined") {
+      const obs = new MutationObserver(() => {
         if (!hasValidLogin()) {
-          if (modal) modal.style.display = "none";
-          redirectToLogin(true);
-          return;
+          modal.style.display = "none";
         }
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ["style", "class"] });
+    }
 
-        if (modal) modal.style.display = "flex";
-      },
-      true
-    );
+    // ==================================================
+    // 🔥 Anti-event-lama: clone tombol Ajukan biar handler lama hilang
+    // ==================================================
+    if (btnAjukan && btnAjukan.parentNode) {
+      const clone = btnAjukan.cloneNode(true);
+      btnAjukan.parentNode.replaceChild(clone, btnAjukan);
+      btnAjukan = clone;
+    }
 
     // bersihin kemungkinan onclick lama
     if (btnAjukan) {
+      btnAjukan.type = "button";
       btnAjukan.onclick = null;
       btnAjukan.removeAttribute("onclick");
+      // jaga-jaga kalau ada atribut modal framework
+      btnAjukan.removeAttribute("data-toggle");
+      btnAjukan.removeAttribute("data-target");
+      btnAjukan.removeAttribute("data-bs-toggle");
+      btnAjukan.removeAttribute("data-bs-target");
     }
 
+    // ==================================================
+    // ✅ Klik Ajukan:
+    // - kalau belum login => redirect login (modal gak boleh kebuka)
+    // - kalau sudah login => modal kebuka
+    // Pakai handler LANGSUNG di tombol + capture biar menang lawan event lain.
+    // ==================================================
+    if (btnAjukan) {
+      btnAjukan.addEventListener(
+        "click",
+        (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+
+          if (modal) modal.style.display = "none";
+
+          if (!hasValidLogin()) {
+            // extra-safety: paksa modal tetap ketutup sebelum pindah halaman
+            if (modal) {
+              modal.style.display = "none";
+              requestAnimationFrame(() => (modal.style.display = "none"));
+              setTimeout(() => (modal.style.display = "none"), 50);
+            }
+            redirectToLogin();
+            return;
+          }
+
+          if (modal) modal.style.display = "flex";
+        },
+        true
+      );
+    }
+
+    // ==================================================
     // tutup modal
+    // ==================================================
     if (btnTutup) {
       btnTutup.addEventListener("click", () => {
         if (modal) modal.style.display = "none";
@@ -156,20 +237,8 @@
       if (e.target === modal) modal.style.display = "none";
     });
 
-    // auto open modal setelah login kalau diminta
-    try {
-      const shouldOpen = sessionStorage.getItem("openAjukanAfterLogin") === "1";
-      if (shouldOpen && hasValidLogin()) {
-        sessionStorage.removeItem("openAjukanAfterLogin");
-        if (modal) modal.style.display = "flex";
-      }
-    } catch {}
-
     // ==========================
-    // 2) CATEGORIES: GET /categories
-    // Backend kamu:
-    // - name: "internal"/"eksternal"
-    // - subkategori: label dropdown
+    // CATEGORIES: GET /categories
     // ==========================
     function setKategoriPlaceholder(text) {
       if (!selectKategori) return;
@@ -208,7 +277,6 @@
         return;
       }
 
-      // remove duplicates (kalau backend ada duplikat)
       const uniq = [];
       const seen = new Set();
       for (const c of filtered) {
@@ -266,8 +334,6 @@
         }
 
         allCategories = cats;
-
-        // default render sesuai dropdown jenis
         renderKategoriByJenis(selectJenis.value || "Internal");
       } catch (err) {
         console.error("❌ FETCH /categories error:", err);
@@ -282,7 +348,7 @@
     }
 
     // ==========================
-    // 3) QUESTIONS LIST: GET /questions
+    // QUESTIONS LIST: GET /questions
     // ==========================
     function renderQuestions(questions) {
       listContainer.innerHTML = "";
@@ -340,12 +406,6 @@
     }
 
     async function loadQuestions() {
-      listContainer.innerHTML = `
-        <p style="text-align:center; color:#777; font-weight:600;">
-          ⏳ Memuat data pertanyaan...
-        </p>
-      `;
-
       try {
         const res = await fetchWithTimeout(`${API_BASE}/questions`, {}, 12000);
         const raw = await res.text();
@@ -365,22 +425,6 @@
           ? data.questions
           : [];
 
-        if (!res.ok) {
-          console.error("❌ GET /questions error:", data);
-          listContainer.innerHTML = `
-            <p style="text-align:center; color:#d32f2f; font-weight:700;">
-              Gagal memuat pertanyaan (${res.status}).
-            </p>
-            <div style="text-align:center; margin-top:10px;">
-              <button id="retryQuestions" style="padding:10px 16px;border:none;border-radius:8px;background:#6d4c41;color:#fff;cursor:pointer;">
-                Coba lagi
-              </button>
-            </div>
-          `;
-          $("retryQuestions")?.addEventListener("click", loadQuestions);
-          return;
-        }
-
         allQuestions = questions;
         renderQuestions(allQuestions);
       } catch (err) {
@@ -389,21 +433,14 @@
           <p style="text-align:center; color:#d32f2f; font-weight:700;">
             Gagal memuat data (timeout / server mati / CORS).
           </p>
-          <div style="text-align:center; margin-top:10px;">
-            <button id="retryQuestions" style="padding:10px 16px;border:none;border-radius:8px;background:#6d4c41;color:#fff;cursor:pointer;">
-              Coba lagi
-            </button>
-          </div>
         `;
-        $("retryQuestions")?.addEventListener("click", loadQuestions);
       }
     }
 
     // ==========================
-    // 4) LIHAT JAWABAN
+    // LIHAT JAWABAN
     // ==========================
     function getAnswerFromQuestion(q) {
-      // diskusi -> ambil jawaban terakhir dari Jaksa
       if (Array.isArray(q.diskusi) && q.diskusi.length > 0) {
         const fromJaksa = q.diskusi.filter((d) => {
           const pengirim = String(d.pengirim || "").toLowerCase();
@@ -422,7 +459,6 @@
         );
       }
 
-      // fallback field langsung
       return pickField(q, ["jawaban", "jawaban_jaksa", "answer", "respon", "reply"], "");
     }
 
@@ -430,7 +466,6 @@
       const container = document.getElementById(`jawaban-${questionId}`);
       if (!container) return;
 
-      // toggle
       if (container.style.display === "block") {
         container.style.display = "none";
         return;
@@ -468,25 +503,23 @@
       `;
     }
 
-    // Delegation listener untuk semua tombol yang dibuat dinamis
     listContainer.addEventListener("click", (e) => {
       const btn = e.target?.closest?.(".btn-lihat-jawaban");
       if (!btn) return;
-
       e.preventDefault();
       const id = btn.getAttribute("data-id");
       if (!id) return;
-
       showJawaban(id);
     });
 
     // ==========================
-    // 5) KIRIM PERTANYAAN: POST /questions
+    // KIRIM PERTANYAAN: wajib login
     // ==========================
     if (btnKirim) {
       btnKirim.addEventListener("click", async () => {
         if (!hasValidLogin()) {
-          redirectToLogin(true);
+          if (modal) modal.style.display = "none";
+          redirectToLogin();
           return;
         }
 
@@ -495,7 +528,8 @@
 
         const jenis = selectJenis?.value || "";
         const kategoriId = selectKategori?.value || "";
-        const kategoriNama = selectKategori?.options?.[selectKategori.selectedIndex]?.text || "";
+        const kategoriNama =
+          selectKategori?.options?.[selectKategori.selectedIndex]?.text || "";
 
         if (!nama || !isi || !jenis || !kategoriId) {
           Swal.fire({
@@ -507,7 +541,7 @@
           return;
         }
 
-        const token = getToken();
+        const token = getSessionToken();
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -515,31 +549,21 @@
           nama,
           nama_penanya: nama,
           jenis,
-
-          // penting: id kategori
           bidang_id: kategoriId,
           kategori_id: kategoriId,
           category_id: kategoriId,
-
           bidang_nama: kategoriNama,
           kategori: kategoriNama,
-
           pertanyaan: isi,
           isi,
           question: isi,
           content: isi,
         };
 
-        console.log("📤 POST /questions payload:", payload);
-
         try {
           const res = await fetchWithTimeout(
             `${API_BASE}/questions`,
-            {
-              method: "POST",
-              headers,
-              body: JSON.stringify(payload),
-            },
+            { method: "POST", headers, body: JSON.stringify(payload) },
             12000
           );
 
@@ -586,9 +610,7 @@
       });
     }
 
-    // ==========================
     // INIT
-    // ==========================
     loadCategories();
     loadQuestions();
   });
