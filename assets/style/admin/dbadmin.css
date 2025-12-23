@@ -247,3 +247,57 @@ body{
     padding: 12px 20px;
   }
 }
+
+/* ====== Role UI (dropdown + button biar serasi) ====== */
+.user-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Dropdown role (kalau kamu belum punya stylingnya, ini akan nyamain) */
+.role-select {
+  border: 1.8px solid #b07a55;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #5a3a2b;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.role-select:focus {
+  box-shadow: 0 0 0 3px rgba(176, 122, 85, 0.25);
+}
+
+/* Tombol Ubah Role biar sama kaya dropdown */
+.action-btn.btn-update-role {
+  border: 1.8px solid #b07a55;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #fff7f1; /* soft biar keliatan tombol */
+  color: #5a3a2b;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.06s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-btn.btn-update-role:hover {
+  background: #ffe9dc;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.action-btn.btn-update-role:active {
+  transform: translateY(1px);
+}
+
+/* Optional: disabled state */
+.action-btn.btn-update-role:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
