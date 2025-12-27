@@ -1,66 +1,61 @@
 // /user/peraturan/fetch/peraturan.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "http://localhost:8080";
   const container = document.getElementById("peraturanContainer");
-
   const PDF_ICON_URL = "/assets/img/pdf.png";
 
   let categoryMapById = {}; // id -> {name, subkategori}
   let categoriesLoaded = false;
 
-  if (container) {
-    container.classList.add("peraturan-root");
-  }
+  // untuk resolve dokumen per index
+  const docCandidatesByIndex = new Map(); // index -> [url...]
+  const resolvedDocUrlByIndex = new Map(); // index -> url
+
+  if (container) container.classList.add("peraturan-root");
 
   // ==========================
-  // Helper URL dokumen
+  // Helpers
   // ==========================
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
+
+  function normalizePath(p) {
+    return String(p || "").trim().replace(/\\/g, "/").replace(/^\.\//, "");
+  }
+
   function normalizeUrl(raw) {
     if (!raw) return "";
+    let url = normalizePath(raw);
+    if (!url) return "";
 
-    let url = String(raw).trim();
+    // kalau sudah full URL
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
 
-    // samakan slash & buang leading "./"
-    url = url.replace(/\\/g, "/").replace(/^\.\//, "");
-
-    // kalau sudah full URL, encode & balikin
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      const encoded = encodeURI(url);
-      console.log("🔗 Dokumen path (full):", url, "=>", encoded);
-      return encoded;
-    }
-
-    // kalau belum ada "/" di depan, tambahkan
-    if (!url.startsWith("/")) {
-      url = "/" + url;
-    }
-
-    const full = API_BASE + url;
-    const encodedFull = encodeURI(full);
-
-    console.log("🔗 Dokumen path normalisasi:", raw, "=>", encodedFull);
-    return encodedFull;
+    // pastikan ada leading /
+    if (!url.startsWith("/")) url = "/" + url;
+    return API_BASE + url;
   }
 
-  // Format tanggal → dd/mm/yy (fallback ke hari ini)
+  function guessFileNameFromUrl(url) {
+    try {
+      const u = new URL(url);
+      const last = u.pathname.split("/").filter(Boolean).pop() || "dokumen";
+      return decodeURIComponent(last);
+    } catch {
+      return String(url).split("/").filter(Boolean).pop() || "dokumen";
+    }
+  }
+
   function formatTanggal(tanggalRaw) {
     let d = null;
-
     if (tanggalRaw) {
       const parsed = new Date(tanggalRaw);
-      if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 2000) {
-        d = parsed;
-      }
+      if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 2000) d = parsed;
     }
-
     if (!d) d = new Date();
 
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit"
-    });
+    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "2-digit" });
   }
 
   function labelJenis(jenisRaw) {
@@ -72,13 +67,115 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================
-  // Load categories untuk mapping FE
+  // Kandidat URL dokumen (dibuat mirip artikel: /uploads paling depan)
+  // ==========================
+  function buildDocCandidates(raw) {
+    raw = normalizePath(raw);
+    if (!raw) return [];
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return [raw];
+
+    const rawNoLeading = raw.replace(/^\/+/, "");
+    const filename = rawNoLeading.includes("/") ? rawNoLeading.split("/").pop() : rawNoLeading;
+    const encodedFile = encodeURIComponent(filename).replace(/%2F/g, "/");
+
+    const candidates = [];
+
+    // prioritas: gin static /uploads
+    candidates.push(`${API_BASE}/uploads/${encodedFile}`);
+
+    // raw persis
+    candidates.push(`${API_BASE}/${rawNoLeading}`);
+    candidates.push(normalizeUrl(raw));
+
+    // alternatif umum
+    const bases = [
+      "uploads",
+      "upload",
+      "docs",
+      "documents",
+      "files",
+      "public/uploads",
+      "public/docs",
+      "static/uploads",
+      "static/docs",
+      "assets/uploads",
+      "assets/docs",
+    ];
+    bases.forEach((b) => candidates.push(`${API_BASE}/${b}/${encodedFile}`));
+
+    // endpoint alternatif (kalau suatu saat dibuat)
+    candidates.push(`${API_BASE}/peraturan/download/${encodedFile}`);
+    candidates.push(`${API_BASE}/download/${encodedFile}`);
+    candidates.push(`${API_BASE}/files/${encodedFile}`);
+
+    return [...new Set(candidates)];
+  }
+
+  async function tryFetchOk(url) {
+    try {
+      const res = await fetch(url, { method: "GET", headers: { Range: "bytes=0-1" } });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function resolveDocUrl(candidates) {
+    for (const u of candidates) {
+      const ok = await tryFetchOk(u);
+      if (ok) return u;
+    }
+    return "";
+  }
+
+  async function fetchAsBlob(url) {
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.blob();
+  }
+
+  async function openBlobInNewTab(blob) {
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
+
+  async function downloadBlob(blob, filename) {
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename || "dokumen";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
+
+  function openUrlInNewTab(url) {
+    window.open(url, "_blank", "noopener");
+  }
+
+  // ✅ Unduh yang bener: coba blob dulu (auto-download). Kalau gagal (CORS), fallback open tab.
+  async function forceDownload(url, filename) {
+    try {
+      const blob = await fetchAsBlob(url);
+      await downloadBlob(blob, filename || guessFileNameFromUrl(url));
+      return true;
+    } catch (e) {
+      // fallback: tetap buka (user bisa save manual)
+      openUrlInNewTab(url);
+      return false;
+    }
+  }
+
+  // ==========================
+  // Load categories untuk mapping
   // ==========================
   async function loadCategories() {
     try {
       const res = await fetch(`${API_BASE}/categories`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       const raw = await res.text();
@@ -89,19 +186,16 @@ document.addEventListener("DOMContentLoaded", () => {
         data = [];
       }
 
-      if (!Array.isArray(data)) {
-        categoriesLoaded = true;
-        return;
-      }
+      let list = [];
+      if (Array.isArray(data)) list = data;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.categories)) list = data.categories;
 
       categoryMapById = {};
-      data.forEach((c) => {
+      (Array.isArray(list) ? list : []).forEach((c) => {
         const id = c._id || c.id || c.categoryId;
         if (!id) return;
-        categoryMapById[String(id)] = {
-          name: c.name || "",
-          subkategori: c.subkategori || ""
-        };
+        categoryMapById[String(id)] = { name: c.name || "", subkategori: c.subkategori || "" };
       });
 
       categoriesLoaded = true;
@@ -112,19 +206,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================
-  // Normalisasi 1 peraturan
+  // Normalisasi peraturan
   // ==========================
   function normalizePeraturan(p) {
-    const judul = p.judul || "-";
+    const judul = p.judul || p.title || "-";
     const isi = p.isi || p.content || "";
 
-    let jenisRaw = p.kategori || p.kategoriUtama || "";
-    let bidang = p.bidang || p.kategoriDetail || p.subkategori || "";
+    let jenisRaw = p.kategori || p.kategoriUtama || p.jenis || p.type || "";
+    let bidang = p.bidang || p.kategoriDetail || p.subkategori || p.subKategori || "";
 
     const categoryId =
-      p.categoryId ||
-      p.category_id ||
-      (p.category && (p.category._id || p.category.id));
+      p.categoryId || p.category_id || (p.category && (p.category._id || p.category.id));
 
     if (categoryId && categoryMapById[String(categoryId)]) {
       const cat = categoryMapById[String(categoryId)];
@@ -134,59 +226,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (p.category && (p.category.name || p.category.subkategori)) {
       if (!jenisRaw && p.category.name) jenisRaw = p.category.name;
-      if (!bidang && p.category.subkategori)
-        bidang = p.category.subkategori;
+      if (!bidang && p.category.subkategori) bidang = p.category.subkategori;
     }
 
     const jenis = labelJenis(jenisRaw);
-
     const tanggalRaw = p.tanggal || p.created_at || p.createdAt || null;
 
     const dokumenRaw =
-      p.dokumen_url ||
-      p.dokumen ||
-      p.file ||
-      p.documentUrl ||
-      p.attachment ||
-      "";
+      p.dokumen_url || p.dokumenUrl || p.dokumen || p.file || p.documentUrl || p.attachment || "";
 
-    const isiParts = isi
+    const isiParts = String(isi)
       .split(/\n{2,}|\r\n{2,}/)
       .map((s) => s.trim())
       .filter(Boolean);
 
-    let kategoriLabel;
-    if (jenis && bidang) {
-      kategoriLabel = `${jenis} • ${bidang}`;
-    } else if (bidang) {
-      kategoriLabel = bidang;
-    } else if (jenis) {
-      kategoriLabel = jenis;
-    } else {
-      kategoriLabel = "Umum";
-    }
+    const kategoriLabel = jenis && bidang ? `${jenis} • ${bidang}` : bidang || jenis || "Umum";
 
     const firstParagraph = isiParts[0] || "";
     const excerpt =
-      firstParagraph.length > 220
-        ? firstParagraph.slice(0, 217).trimEnd() + "..."
-        : firstParagraph;
+      firstParagraph.length > 220 ? firstParagraph.slice(0, 217).trimEnd() + "..." : firstParagraph;
 
     return {
       judul,
       kategori: kategoriLabel,
-      jenis,
-      bidang,
       tanggalRaw,
       tanggalFormatted: formatTanggal(tanggalRaw),
       isiParts,
       excerpt,
-      dokumenUrl: dokumenRaw ? normalizeUrl(dokumenRaw) : ""
+      dokumenRaw: safeText(dokumenRaw),
     };
   }
 
   // ==========================
-  // Render card peraturan
+  // Render UI
   // ==========================
   function renderPeraturan(list) {
     if (!container) return;
@@ -201,33 +273,29 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    docCandidatesByIndex.clear();
+    resolvedDocUrlByIndex.clear();
+
+    list.forEach((p, idx) => {
+      const raw = p.dokumenRaw;
+      docCandidatesByIndex.set(idx, buildDocCandidates(raw));
+    });
+
     const cardsHtml = list
       .map((p, index) => {
-        const bodyHtmlText = p.isiParts
-          .map((par) => `<p>${par}</p>`)
-          .join("");
-
-        const hasDoc = !!p.dokumenUrl;
+        const bodyHtmlText = p.isiParts.map((par) => `<p>${par}</p>`).join("");
+        const hasDoc = !!p.dokumenRaw;
 
         const docHtml = hasDoc
           ? `
-            <div class="artikel-doc-actions peraturan-doc-actions">
-              <a
-                href="${p.dokumenUrl}"
-                target="_blank"
-                rel="noopener"
-                class="btn-doc btn-lihat"
-              >
+            <div class="artikel-doc-actions peraturan-doc-actions"
+                 style="margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="dokumen-action dokumen-lihat btn-doc btn-lihat" data-index="${index}">
                 <span>👁 Lihat</span>
-              </a>
-              <a
-                href="${p.dokumenUrl}"
-                target="_blank"
-                download
-                class="btn-doc btn-unduh"
-              >
+              </button>
+              <button type="button" class="dokumen-action dokumen-unduh btn-doc btn-unduh" data-index="${index}">
                 <span>⬇ Unduh</span>
-              </a>
+              </button>
             </div>
           `
           : "";
@@ -237,18 +305,12 @@ document.addEventListener("DOMContentLoaded", () => {
             ${
               hasDoc
                 ? `
-            <div
-              class="pdf-icon-box"
-              style="
-                width: 120px;
-                height: 150px;
-                margin: 0 auto 16px;
-                background-image: url('${PDF_ICON_URL}');
-                background-size: contain;
-                background-position: center;
-                background-repeat: no-repeat;
-              "
-            ></div>`
+              <div class="pdf-icon-box"
+                   style="
+                    width: 120px; height: 150px; margin: 0 auto 16px;
+                    background-image: url('${PDF_ICON_URL}');
+                    background-size: contain; background-position: center; background-repeat: no-repeat;">
+              </div>`
                 : ""
             }
 
@@ -258,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <h3 class="artikel-title">${p.judul}</h3>
                 <p class="artikel-meta">
                   <span>Peraturan Hukum</span>
-                  <span>•</span>
+                  <span style="margin:0 6px;">•</span>
                   <span>${p.tanggalFormatted}</span>
                 </p>
               </div>
@@ -269,11 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               ${docHtml}
 
-              <button
-                class="btn-detail btn-detail-peraturan"
-                type="button"
-                data-index="${index}"
-              >
+              <button class="btn-detail btn-detail-peraturan" type="button" data-index="${index}">
                 <span class="btn-detail-text">📖 Baca Selengkapnya</span>
                 <span class="arrow">➜</span>
               </button>
@@ -287,11 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
 
-    container.innerHTML = `
-      <div class="artikel-grid peraturan-grid">
-        ${cardsHtml}
-      </div>
-    `;
+    container.innerHTML = `<div class="artikel-grid peraturan-grid">${cardsHtml}</div>`;
   }
 
   // ==========================
@@ -307,14 +361,22 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    if (!categoriesLoaded) {
-      await loadCategories().catch(() => {});
-    }
+    if (!categoriesLoaded) await loadCategories().catch(() => {});
 
     try {
-      const res = await fetch(`${API_BASE}/peraturan`, {
-        method: "GET"
-      });
+      const res = await fetch(`${API_BASE}/peraturan`, { method: "GET" });
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = [];
+      }
+
+      let list = [];
+      if (Array.isArray(data)) list = data;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.peraturan)) list = data.peraturan;
 
       if (!res.ok) {
         if (container) {
@@ -328,11 +390,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const data = await res.json().catch(() => []);
-      let normalized = (Array.isArray(data) ? data : []).map(normalizePeraturan);
+      let normalized = (Array.isArray(list) ? list : []).map(normalizePeraturan);
 
-      // urutkan dari terbaru
-      normalized = normalized.sort((a, b) => {
+      normalized.sort((a, b) => {
         const da = a.tanggalRaw ? new Date(a.tanggalRaw).getTime() : 0;
         const db = b.tanggalRaw ? new Date(b.tanggalRaw).getTime() : 0;
         return db - da;
@@ -352,34 +412,74 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  loadPeraturan();
-
   // ==========================
-  // Toggle "Baca Selengkapnya"
+  // Actions dokumen: Lihat / Unduh
   // ==========================
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-detail-peraturan");
-    if (!btn) return;
+  async function handleDocAction(index, mode) {
+    const idx = Number(index);
+    const candidates = docCandidatesByIndex.get(idx) || [];
+    if (!candidates.length) return;
 
-    const idx = btn.getAttribute("data-index");
-    if (idx == null) return;
-
-    const full = document.querySelector(
-      `.peraturan-full[data-index="${idx}"]`
-    );
-    if (!full) return;
-
-    const textSpan = btn.querySelector(".btn-detail-text");
-    const isShown = full.style.display === "block";
-
-    full.style.display = isShown ? "none" : "block";
-
-    if (textSpan) {
-      textSpan.textContent = isShown
-        ? "📖 Baca Selengkapnya"
-        : "⬆ Tutup Ringkasan";
+    // 1) kalau sudah resolved
+    if (resolvedDocUrlByIndex.has(idx)) {
+      const url = resolvedDocUrlByIndex.get(idx);
+      if (mode === "lihat") {
+        openUrlInNewTab(url);
+        return;
+      } else {
+        await forceDownload(url, guessFileNameFromUrl(url));
+        return;
+      }
     }
 
-    btn.classList.toggle("expanded", !isShown);
+    // 2) resolve dulu
+    const resolved = await resolveDocUrl(candidates);
+    if (resolved) {
+      resolvedDocUrlByIndex.set(idx, resolved);
+      if (mode === "lihat") {
+        openUrlInNewTab(resolved);
+      } else {
+        await forceDownload(resolved, guessFileNameFromUrl(resolved));
+      }
+      return;
+    }
+
+    alert(
+      "Dokumen tidak ditemukan (404).\n\nPastikan file bisa dibuka manual:\n" +
+        "http://localhost:8080/uploads/NAMA_FILE.pdf"
+    );
+  }
+
+  // ==========================
+  // Events
+  // ==========================
+  document.addEventListener("click", async (e) => {
+    // toggle detail
+    const btn = e.target.closest(".btn-detail-peraturan");
+    if (btn) {
+      const idx = btn.getAttribute("data-index");
+      const full = document.querySelector(`.peraturan-full[data-index="${idx}"]`);
+      if (!full) return;
+
+      const textSpan = btn.querySelector(".btn-detail-text");
+      const isShown = full.style.display === "block";
+      full.style.display = isShown ? "none" : "block";
+
+      if (textSpan) textSpan.textContent = isShown ? "📖 Baca Selengkapnya" : "⬆ Tutup Ringkasan";
+      btn.classList.toggle("expanded", !isShown);
+      return;
+    }
+
+    // dokumen actions
+    const docBtn = e.target.closest(".dokumen-action");
+    if (!docBtn) return;
+
+    const idx = docBtn.getAttribute("data-index");
+    if (idx == null) return;
+
+    if (docBtn.classList.contains("dokumen-lihat")) await handleDocAction(idx, "lihat");
+    else await handleDocAction(idx, "unduh");
   });
+
+  loadPeraturan();
 });

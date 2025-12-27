@@ -1,5 +1,4 @@
 // /admin/peraturan/fetch/peraturanadmin.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "http://localhost:8080";
 
@@ -18,23 +17,66 @@ document.addEventListener("DOMContentLoaded", () => {
   const dokumenUrlInput = document.getElementById("dokumenUrl"); // kalau ada versi link
 
   let editingId = null; // null = mode tambah
-  let categories = [];  // hasil GET /categories
+  let categories = []; // hasil GET /categories
   let internalSubs = [];
   let eksternalSubs = [];
+
+  // simpan list supaya edit bisa ambil record-nya
+  let allPeraturan = [];
+
+  // simpan dokumen lama agar edit tanpa upload file tetap aman
+  let existingDokumenValue = "";
 
   // ============================
   // Helper SweetAlert
   // ============================
   function showError(message) {
+    if (typeof Swal === "undefined") return alert(message);
     Swal.fire("Gagal", message, "error");
   }
 
   function showSuccess(message) {
+    if (typeof Swal === "undefined") return alert(message);
     Swal.fire("Berhasil", message, "success");
   }
 
   function getToken() {
     return localStorage.getItem("token") || "";
+  }
+
+  function safeParse(text) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: text };
+    }
+  }
+
+  function extractErr(data) {
+    return (
+      data?.error ||
+      data?.message ||
+      data?.msg ||
+      (Array.isArray(data?.errors) ? data.errors.map((e) => e.message || e.msg).join(", ") : "") ||
+      "Terjadi kesalahan."
+    );
+  }
+
+  function pick(obj, keys, fallback = "") {
+    if (!obj) return fallback;
+    for (const k of keys) {
+      const parts = k.split(".");
+      let val = obj;
+      for (const p of parts) {
+        if (val && Object.prototype.hasOwnProperty.call(val, p)) val = val[p];
+        else {
+          val = undefined;
+          break;
+        }
+      }
+      if (val !== undefined && val !== null && String(val).trim() !== "") return String(val);
+    }
+    return fallback;
   }
 
   // ============================
@@ -45,16 +87,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const jenisLower = (jenis || "").toLowerCase();
 
-    // reset options
     selectKategoriDetail.innerHTML = `
       <option value="" disabled selected>Pilih kategori / subkategori</option>
     `;
 
     if (!jenisLower) return;
 
-    const filtered = categories.filter(
-      (c) => String(c.name || "").toLowerCase() === jenisLower
-    );
+    const filtered = categories.filter((c) => String(c.name || "").toLowerCase() === jenisLower);
 
     const usedSubs = new Set();
 
@@ -63,18 +102,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const sub = c.subkategori || "";
       if (!id || !sub) return;
 
-      // hindari duplikat subkategori kalau ada dua entry sama
       if (usedSubs.has(sub)) return;
       usedSubs.add(sub);
 
       const opt = document.createElement("option");
-      opt.value = id;                 // value = ID kategori (disimpan di DB)
-      opt.textContent = sub;          // teks yang kelihatan
-      opt.dataset.subkategori = sub;  // simpan teks aslinya
+      opt.value = id; // value = ID kategori (disimpan di DB)
+      opt.textContent = sub; // teks yang kelihatan
+      opt.dataset.subkategori = sub;
 
-      if (preselectText && preselectText === sub) {
-        opt.selected = true;
-      }
+      if (preselectText && preselectText === sub) opt.selected = true;
+
       selectKategoriDetail.appendChild(opt);
     });
   }
@@ -85,34 +122,28 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${API_BASE}/categories`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" },
       });
 
       const raw = await res.text();
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = [];
+      let data = safeParse(raw);
+
+      // beberapa backend balikin {data:[...]}
+      if (!Array.isArray(data)) {
+        if (Array.isArray(data.data)) data = data.data;
+        else if (Array.isArray(data.categories)) data = data.categories;
+        else data = [];
       }
 
-      if (!Array.isArray(data)) return;
+      if (!Array.isArray(data)) data = [];
 
-      // simpan hasil aslinya dulu
       categories = data;
 
-      // ==============================
-      // Tambah kategori internal manual:
-      // _id: 693f6813e1e21d9a8b0101d6
-      // name: "internal"
-      // subkategori: "Pemulihan Aset"
-      // ==============================
+      // inject pemulihan aset (tetap dipertahankan sesuai kode kamu)
       const extraInternalCategory = {
         _id: "693f6813e1e21d9a8b0101d6",
         name: "internal",
-        subkategori: "Pemulihan Aset"
+        subkategori: "Pemulihan Aset",
       };
 
       const alreadyHasPemulihan = categories.some((c) => {
@@ -121,12 +152,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return name === "internal" && sub === "pemulihan aset";
       });
 
-      // kalau backend belum punya, kita inject; kalau sudah, kita nggak dobelin
-      if (!alreadyHasPemulihan) {
-        categories.push(extraInternalCategory);
-      }
+      if (!alreadyHasPemulihan) categories.push(extraInternalCategory);
 
-      // rebuild list internal & eksternal setelah injeksi
       internalSubs = categories
         .filter((c) => String(c.name || "").toLowerCase() === "internal")
         .map((c) => c.subkategori)
@@ -163,17 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + getToken()
-        }
+          Authorization: "Bearer " + getToken(),
+        },
       });
 
       const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = [];
-      }
+      let data = safeParse(text);
 
       if (!res.ok) {
         console.error("❌ Error GET /peraturan:", res.status, data);
@@ -187,7 +209,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      if (!Array.isArray(data) || data.length === 0) {
+      // normalisasi list
+      let list = [];
+      if (Array.isArray(data)) list = data;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.peraturan)) list = data.peraturan;
+
+      if (!Array.isArray(list) || list.length === 0) {
+        allPeraturan = [];
         tabelBody.innerHTML = `
           <tr>
             <td colspan="3" style="text-align:center; color:#6d4c41;">
@@ -198,25 +227,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // urutkan dari yang terbaru
-      data.sort((a, b) => {
+      // urutkan terbaru
+      list.sort((a, b) => {
         const da = a.tanggal || a.createdAt || a.created_at;
         const db = b.tanggal || b.createdAt || b.created_at;
         return new Date(db || 0) - new Date(da || 0);
       });
 
-      tabelBody.innerHTML = data
+      allPeraturan = list;
+
+      tabelBody.innerHTML = list
         .map((item) => {
           const id = item.id || item._id || "";
           const judul = item.judul || "-";
 
-          const tanggalRaw =
-            item.tanggal || item.created_at || item.createdAt || "";
+          const tanggalRaw = item.tanggal || item.created_at || item.createdAt || "";
           const tanggal = tanggalRaw
             ? new Date(tanggalRaw).toLocaleDateString("id-ID", {
                 day: "2-digit",
                 month: "long",
-                year: "numeric"
+                year: "numeric",
               })
             : "-";
 
@@ -241,9 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".btn-edit").forEach((btn) => {
         btn.addEventListener("click", () => {
           const id = btn.getAttribute("data-id");
-          const record = data.find(
-            (item) => String(item.id || item._id) === String(id)
-          );
+          const record = allPeraturan.find((x) => String(x.id || x._id) === String(id));
           if (!record) return;
 
           editingId = id;
@@ -251,12 +279,15 @@ document.addEventListener("DOMContentLoaded", () => {
           const judulInput = document.getElementById("judul");
           if (judulInput) judulInput.value = record.judul || "";
 
+          // isi peraturan (support array / string)
           const container = document.getElementById("peraturanContainer");
           if (container) {
             container.innerHTML = "";
-            const isiArray = Array.isArray(record.isi)
-              ? record.isi
-              : (record.isi || "")
+
+            const isiRaw = record.isi || record.content || "";
+            const isiArray = Array.isArray(isiRaw)
+              ? isiRaw
+              : String(isiRaw)
                   .split(/\n{2,}|\r\n{2,}/)
                   .map((s) => s.trim())
                   .filter(Boolean);
@@ -283,29 +314,21 @@ document.addEventListener("DOMContentLoaded", () => {
           // kategori utama & subkategori
           const kategori = record.kategori || record.kategoriUtama || "";
           const bidang =
-            record.bidang ||
-            record.kategoriDetail ||
-            record.subkategori ||
-            "";
+            record.bidang || record.kategoriDetail || record.subkategori || record.sub_kategori || "";
 
-          if (selectKategoriUtama) {
-            selectKategoriUtama.value = kategori || "";
-          }
+          if (selectKategoriUtama) selectKategoriUtama.value = kategori || "";
           applySubkategoriOptions(kategori, bidang);
 
+          // simpan dokumen lama supaya PUT tanpa file tidak menghilangkan dokumen
+          existingDokumenValue = pick(record, ["dokumen", "dokumen_url", "dokumenUrl", "file", "attachment", "documentUrl"], "");
+
           if (dokumenUrlInput) {
-            dokumenUrlInput.value =
-              record.dokumen_url ||
-              record.dokumenUrl ||
-              record.link_dokumen ||
-              "";
+            dokumenUrlInput.value = pick(record, ["dokumen_url", "dokumenUrl", "link_dokumen"], "");
           }
           if (dokumenFileInput) dokumenFileInput.value = "";
 
-          const btnSimpan = formPeraturan.querySelector(".btn-simpan");
-          if (btnSimpan) {
-            btnSimpan.innerHTML = `<i class="fas fa-save"></i> Perbarui Data`;
-          }
+          const btnSimpan = formPeraturan?.querySelector(".btn-simpan");
+          if (btnSimpan) btnSimpan.innerHTML = `<i class="fas fa-save"></i> Perbarui Data`;
 
           window.scrollTo({ top: 0, behavior: "smooth" });
         });
@@ -317,6 +340,12 @@ document.addEventListener("DOMContentLoaded", () => {
           const id = btn.getAttribute("data-id");
           if (!id) return;
 
+          if (typeof Swal === "undefined") {
+            const ok = confirm("Hapus peraturan ini?");
+            if (ok) deletePeraturan(id);
+            return;
+          }
+
           Swal.fire({
             title: "Hapus peraturan ini?",
             text: "Tindakan ini tidak dapat dibatalkan.",
@@ -325,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
             confirmButtonColor: "#d33",
             cancelButtonColor: "#6D4C41",
             confirmButtonText: "Ya, hapus",
-            cancelButtonText: "Batal"
+            cancelButtonText: "Batal",
           }).then((result) => {
             if (result.isConfirmed) deletePeraturan(id);
           });
@@ -350,24 +379,15 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${API_BASE}/peraturan/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: "Bearer " + getToken()
-        }
+        headers: { Authorization: "Bearer " + getToken() },
       });
 
       const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { message: text };
-      }
+      const data = safeParse(text);
 
       if (!res.ok) {
         console.error("❌ Error DELETE /peraturan/:id:", res.status, data);
-        showError(
-          data.error || data.message || "Gagal menghapus peraturan."
-        );
+        showError(extractErr(data) || "Gagal menghapus peraturan.");
         return;
       }
 
@@ -382,65 +402,89 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================
   // SUBMIT (POST / PUT)
   // ============================
+  function buildCommonFields({ judul, isiText, kategoriUtama, kategoriDetail, categoryId }) {
+    // banyak alias biar backend kamu “nerima”
+    return {
+      judul,
+      title: judul,
+
+      isi: isiText,
+      content: isiText,
+
+      kategori: kategoriUtama,
+      kategoriUtama: kategoriUtama,
+      jenis: kategoriUtama,
+      type: kategoriUtama,
+
+      bidang: kategoriDetail,
+      kategoriDetail: kategoriDetail,
+      subkategori: kategoriDetail,
+      sub_kategori: kategoriDetail,
+
+      categoryId: categoryId,
+      kategoriId: categoryId,
+      category_id: categoryId,
+    };
+  }
+
+  function validateSubkategori(kategoriUtama, kategoriDetail) {
+    if (kategoriUtama === "internal" && internalSubs.length) {
+      if (!internalSubs.includes(kategoriDetail)) {
+        showError(
+          `Subkategori internal "${kategoriDetail}" tidak ditemukan di data /categories.\n` +
+            `Gunakan salah satu dari: ${internalSubs.join(", ")}`
+        );
+        return false;
+      }
+    }
+    if (kategoriUtama === "eksternal" && eksternalSubs.length) {
+      if (!eksternalSubs.includes(kategoriDetail)) {
+        showError(
+          `Subkategori eksternal "${kategoriDetail}" tidak ditemukan di data /categories.\n` +
+            `Gunakan salah satu dari: ${eksternalSubs.join(", ")}`
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   async function submitPeraturan(e) {
     e.preventDefault();
 
     const judulInput = document.getElementById("judul");
     const judul = judulInput ? judulInput.value.trim() : "";
 
-    const isiTextareas = document.querySelectorAll(
-      "#peraturanContainer textarea[name='isi[]']"
-    );
+    const isiTextareas = document.querySelectorAll("#peraturanContainer textarea[name='isi[]']");
     const isiList = Array.from(isiTextareas)
       .map((ta) => ta.value.trim())
       .filter((v) => v !== "");
 
-    const kategoriUtama = selectKategoriUtama
-      ? selectKategoriUtama.value
-      : "";
-    const selectedOption = selectKategoriDetail
-      ? selectKategoriDetail.options[selectKategoriDetail.selectedIndex]
-      : null;
+    const kategoriUtama = selectKategoriUtama ? selectKategoriUtama.value : "";
+    const selectedOption =
+      selectKategoriDetail && selectKategoriDetail.selectedIndex >= 0
+        ? selectKategoriDetail.options[selectKategoriDetail.selectedIndex]
+        : null;
 
-    const categoryId = selectedOption ? selectedOption.value : "";
+    const categoryId = selectedOption ? String(selectedOption.value || "") : "";
     const kategoriDetail = selectedOption
-      ? (selectedOption.dataset.subkategori || selectedOption.textContent || "").trim()
+      ? String(selectedOption.dataset.subkategori || selectedOption.textContent || "").trim()
       : "";
 
     if (!judul || isiList.length === 0) {
       showError("Judul dan isi peraturan wajib diisi.");
       return;
     }
-
     if (!kategoriUtama) {
       showError("Pilih jenis peraturan (internal / eksternal).");
       return;
     }
-
     if (!kategoriDetail) {
       showError("Pilih kategori / subkategori peraturan.");
       return;
     }
 
-    // VALIDASI lawan /categories
-    if (kategoriUtama === "internal" && internalSubs.length) {
-      if (!internalSubs.includes(kategoriDetail)) {
-        showError(
-          `Subkategori internal "${kategoriDetail}" tidak ditemukan di data /categories. ` +
-          `Gunakan salah satu dari: ${internalSubs.join(", ")}`
-        );
-        return;
-      }
-    }
-    if (kategoriUtama === "eksternal" && eksternalSubs.length) {
-      if (!eksternalSubs.includes(kategoriDetail)) {
-        showError(
-          `Subkategori eksternal "${kategoriDetail}" tidak ditemukan di data /categories. ` +
-          `Gunakan salah satu dari: ${eksternalSubs.join(", ")}`
-        );
-        return;
-      }
-    }
+    if (!validateSubkategori(kategoriUtama, kategoriDetail)) return;
 
     const token = getToken();
     if (!token) {
@@ -448,98 +492,189 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const fd = new FormData();
-    fd.append("judul", judul);
-    fd.append("isi", isiList.join("\n\n"));
-    fd.append("kategori", kategoriUtama);
-    fd.append("bidang", kategoriDetail);
-    fd.append("subkategori", kategoriDetail);
-
-    // field spesifik internal / eksternal
-    if (kategoriUtama === "internal") {
-      fd.append("subkategoriInternal", kategoriDetail);
-      fd.append("subKategoriInternal", kategoriDetail);
-      fd.append("subkategori_internal", kategoriDetail);
-    } else if (kategoriUtama === "eksternal") {
-      fd.append("subkategoriEksternal", kategoriDetail);
-      fd.append("subKategoriEksternal", kategoriDetail);
-      fd.append("subkategori_eksternal", kategoriDetail);
-    }
-
-    if (categoryId) {
-      fd.append("categoryId", categoryId);
-      fd.append("kategoriId", categoryId);
-    }
-
-    const hasFile =
-      dokumenFileInput &&
-      dokumenFileInput.files &&
-      dokumenFileInput.files.length > 0;
-
-    fd.append("hasDokumenFile", hasFile ? "true" : "false");
-
-    if (hasFile) {
-      // backend sebaiknya menyimpan req.file.filename dan path "uploads/<filename>"
-      fd.append("dokumen", dokumenFileInput.files[0]);
-    } else if (dokumenUrlInput && dokumenUrlInput.value.trim()) {
-      fd.append("dokumen_url", dokumenUrlInput.value.trim());
-    }
-
-    console.log("📤 PAYLOAD PREVIEW POST/PUT /peraturan:", {
+    const isiText = isiList.join("\n\n");
+    const common = buildCommonFields({
       judul,
-      isi: isiList.join("\n\n"),
-      kategori: kategoriUtama,
-      bidang: kategoriDetail,
+      isiText,
+      kategoriUtama,
+      kategoriDetail,
       categoryId,
-      hasDokumenFile: hasFile
     });
 
-    const url = editingId
-      ? `${API_BASE}/peraturan/${editingId}`
-      : `${API_BASE}/peraturan`;
-    const method = editingId ? "PUT" : "POST";
+    const hasFile =
+      dokumenFileInput && dokumenFileInput.files && dokumenFileInput.files.length > 0;
+
+    // URL + method
+    const isEdit = !!editingId;
+    const url = isEdit ? `${API_BASE}/peraturan/${editingId}` : `${API_BASE}/peraturan`;
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: "Bearer " + token
-          // jangan set Content-Type, biar browser set multipart/form-data
-        },
-        body: fd
-      });
+      // ============================
+      // 1) EDIT TANPA FILE => JSON PUT (INI YANG BIKIN EDIT KAMU BERHASIL)
+      // ============================
+      if (isEdit && !hasFile) {
+        // bawa dokumen lama kalau ada supaya gak hilang
+        const dokUrl = (dokumenUrlInput && dokumenUrlInput.value.trim()) || "";
+        const payload = {
+          ...common,
 
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { message: text };
-      }
+          // kalau backend pakai dokumen_url:
+          dokumen_url: dokUrl || (String(existingDokumenValue || "").includes("http") ? existingDokumenValue : ""),
+          dokumenUrl: dokUrl,
 
-      if (!res.ok) {
-        console.error(`❌ Error ${method} /peraturan:`, res.status, data);
-        showError(
-          data.error ||
-            data.message ||
-            `Gagal menyimpan data peraturan.`
-        );
+          // kalau backend pakai dokumen path (uploads/xxx.pdf):
+          dokumen: existingDokumenValue || "",
+          existingDokumen: existingDokumenValue || "",
+          dokumenLama: existingDokumenValue || "",
+        };
+
+        const res = await fetch(url, {
+          method: "PUT",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const text = await res.text();
+        const data = safeParse(text);
+
+        if (!res.ok) {
+          console.error("❌ Error PUT(JSON) /peraturan/:id:", res.status, data);
+
+          // fallback: beberapa backend maunya PATCH
+          const res2 = await fetch(url, {
+            method: "PATCH",
+            headers: {
+              Authorization: "Bearer " + token,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const text2 = await res2.text();
+          const data2 = safeParse(text2);
+
+          if (!res2.ok) {
+            console.error("❌ Error PATCH(JSON) /peraturan/:id:", res2.status, data2);
+            showError(extractErr(data2));
+            return;
+          }
+        }
+
+        showSuccess("Data peraturan berhasil diperbarui.");
+
+        // reset form
+        editingId = null;
+        existingDokumenValue = "";
+        if (formPeraturan) formPeraturan.reset();
+
+        if (selectKategoriDetail) {
+          selectKategoriDetail.innerHTML = `<option value="" disabled selected>Pilih kategori / subkategori</option>`;
+        }
+
+        const container = document.getElementById("peraturanContainer");
+        if (container) {
+          container.innerHTML = `
+            <div class="form-group peraturan-item">
+              <label for="isi1">Isi Peraturan</label>
+              <textarea id="isi1" name="isi[]" rows="4" placeholder="Masukkan isi peraturan..." required></textarea>
+            </div>
+          `;
+        }
+        if (dokumenFileInput) dokumenFileInput.value = "";
+
+        const btnSimpan = formPeraturan?.querySelector(".btn-simpan");
+        if (btnSimpan) btnSimpan.innerHTML = `<i class="fas fa-save"></i> Simpan Data`;
+
+        loadPeraturan();
         return;
       }
 
-      showSuccess(
-        editingId
-          ? "Data peraturan berhasil diperbarui."
-          : "Data peraturan berhasil disimpan."
-      );
+      // ============================
+      // 2) TAMBAH / EDIT DENGAN FILE => FormData (POST/PUT)
+      // ============================
+      const fd = new FormData();
+
+      // append common fields + alias
+      Object.entries(common).forEach(([k, v]) => fd.append(k, v));
+
+      // alias tambahan yang sering dipakai
+      fd.append("subkategoriInternal", kategoriDetail);
+      fd.append("subKategoriInternal", kategoriDetail);
+      fd.append("subkategori_internal", kategoriDetail);
+
+      fd.append("subkategoriEksternal", kategoriDetail);
+      fd.append("subKategoriEksternal", kategoriDetail);
+      fd.append("subkategori_eksternal", kategoriDetail);
+
+      // dokumen: file atau url
+      fd.append("hasDokumenFile", hasFile ? "true" : "false");
+
+      if (hasFile) {
+        fd.append("dokumen", dokumenFileInput.files[0]);
+        fd.append("file", dokumenFileInput.files[0]);
+        fd.append("attachment", dokumenFileInput.files[0]);
+        fd.append("document", dokumenFileInput.files[0]);
+      } else if (dokumenUrlInput && dokumenUrlInput.value.trim()) {
+        fd.append("dokumen_url", dokumenUrlInput.value.trim());
+        fd.append("dokumenUrl", dokumenUrlInput.value.trim());
+      } else if (existingDokumenValue) {
+        // jaga-jaga agar backend gak ngeblank-in dokumen
+        fd.append("dokumenLama", existingDokumenValue);
+        fd.append("existingDokumen", existingDokumenValue);
+        fd.append("dokumen", existingDokumenValue);
+      }
+
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: "Bearer " + token,
+          // JANGAN set Content-Type agar boundary multipart benar
+        },
+        body: fd,
+      });
+
+      const text = await res.text();
+      const data = safeParse(text);
+
+      if (!res.ok) {
+        console.error(`❌ Error ${method} /peraturan:`, res.status, data);
+
+        // fallback PATCH multipart (beberapa API pakai PATCH)
+        if (isEdit) {
+          const res2 = await fetch(url, {
+            method: "PATCH",
+            headers: { Authorization: "Bearer " + token },
+            body: fd,
+          });
+
+          const text2 = await res2.text();
+          const data2 = safeParse(text2);
+
+          if (!res2.ok) {
+            console.error("❌ Error PATCH(multipart) /peraturan/:id:", res2.status, data2);
+            showError(extractErr(data2));
+            return;
+          }
+        } else {
+          showError(extractErr(data) || "Gagal menyimpan data peraturan.");
+          return;
+        }
+      }
+
+      showSuccess(isEdit ? "Data peraturan berhasil diperbarui." : "Data peraturan berhasil disimpan.");
 
       // reset form
       editingId = null;
+      existingDokumenValue = "";
       if (formPeraturan) formPeraturan.reset();
 
       if (selectKategoriDetail) {
-        selectKategoriDetail.innerHTML =
-          `<option value="" disabled selected>Pilih kategori / subkategori</option>`;
+        selectKategoriDetail.innerHTML = `<option value="" disabled selected>Pilih kategori / subkategori</option>`;
       }
 
       const container = document.getElementById("peraturanContainer");
@@ -547,26 +682,18 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = `
           <div class="form-group peraturan-item">
             <label for="isi1">Isi Peraturan</label>
-            <textarea
-              id="isi1"
-              name="isi[]"
-              rows="4"
-              placeholder="Masukkan isi peraturan..."
-              required
-            ></textarea>
+            <textarea id="isi1" name="isi[]" rows="4" placeholder="Masukkan isi peraturan..." required></textarea>
           </div>
         `;
       }
       if (dokumenFileInput) dokumenFileInput.value = "";
 
-      const btnSimpan = formPeraturan.querySelector(".btn-simpan");
-      if (btnSimpan) {
-        btnSimpan.innerHTML = `<i class="fas fa-save"></i> Simpan Data`;
-      }
+      const btnSimpan = formPeraturan?.querySelector(".btn-simpan");
+      if (btnSimpan) btnSimpan.innerHTML = `<i class="fas fa-save"></i> Simpan Data`;
 
       loadPeraturan();
     } catch (err) {
-      console.error(`❌ FETCH ERROR ${method} /peraturan:`, err);
+      console.error("❌ FETCH ERROR submitPeraturan:", err);
       showError("Gagal terhubung ke server.");
     }
   }
@@ -574,9 +701,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================
   // Events
   // ============================
-  if (formPeraturan) {
-    formPeraturan.addEventListener("submit", submitPeraturan);
-  }
+  if (formPeraturan) formPeraturan.addEventListener("submit", submitPeraturan);
 
   if (selectKategoriUtama) {
     selectKategoriUtama.addEventListener("change", () => {
