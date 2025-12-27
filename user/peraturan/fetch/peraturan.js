@@ -20,6 +20,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(v ?? "").trim();
   }
 
+  // ✅ NEW: pick field dari banyak alias (biar kategori/subkategori edit kebaca)
+  function pickField(obj, keys, fallback = "") {
+    try {
+      for (const k of keys) {
+        const parts = String(k).split(".");
+        let val = obj;
+
+        for (const p of parts) {
+          if (val && Object.prototype.hasOwnProperty.call(val, p)) val = val[p];
+          else {
+            val = undefined;
+            break;
+          }
+        }
+
+        if (val === undefined || val === null) continue;
+
+        // kalau object (mis. populated category), skip kecuali ada string
+        if (typeof val === "object") continue;
+
+        const s = String(val).trim();
+        if (s !== "") return s;
+      }
+    } catch {
+      // ignore
+    }
+    return fallback;
+  }
+
   function normalizePath(p) {
     return String(p || "").trim().replace(/\\/g, "/").replace(/^\.\//, "");
   }
@@ -212,12 +241,78 @@ document.addEventListener("DOMContentLoaded", () => {
     const judul = p.judul || p.title || "-";
     const isi = p.isi || p.content || "";
 
-    let jenisRaw = p.kategori || p.kategoriUtama || p.jenis || p.type || "";
-    let bidang = p.bidang || p.kategoriDetail || p.subkategori || p.subKategori || "";
+    // ✅ ambil jenis dari banyak alias (biar hasil edit kebaca)
+    let jenisRaw = pickField(p, [
+      "kategori",
+      "kategoriUtama",
+      "jenis",
+      "type",
+      "kategori_raw",
+      "kategori_utama",
+      "jenis_raw",
+      "type_raw",
+      "category.name",
+      "category.type",
+    ]);
 
-    const categoryId =
-      p.categoryId || p.category_id || (p.category && (p.category._id || p.category.id));
+    // ✅ ambil bidang/subkategori dari banyak alias (ini yang bikin edit kategori kebaca)
+    // prioritas: field yang biasanya diupdate di admin
+    let bidang = pickField(p, [
+      // yang paling sering dipakai
+      "bidang",
+      "kategoriDetail",
+      "subkategori",
+      "subKategori",
+      "sub_kategori",
 
+      // versi pretty / label (sering disimpan saat edit)
+      "bidang_pretty",
+      "kategoriDetail_pretty",
+      "subkategori_pretty",
+      "subkategoriInternalLabel",
+      "subKategoriInternalLabel",
+      "subkategori_internal_label",
+
+      // versi internal/eksternal (sering ada di backend)
+      "subkategoriInternal",
+      "subKategoriInternal",
+      "subkategori_internal",
+      "subkategoriEksternal",
+      "subKategoriEksternal",
+      "subkategori_eksternal",
+
+      // fallback lain kalau backend pakai nama beda
+      "bidangLabel",
+      "kategoriLabel",
+      "kategori_detail",
+      "kategoriDetailRaw",
+      "bidangRaw",
+
+      // populated
+      "category.subkategori",
+    ]);
+
+    // ✅ categoryId: ambil dari banyak alias juga (biar mapping tetap nyambung setelah edit)
+    const categoryId = pickField(p, [
+      "categoryId",
+      "category_id",
+      "kategoriId",
+      "kategori_id",
+
+      // alias tambahan yg sering dipakai
+      "categoryIdResolved",
+      "kategoriDetailId",
+      "subkategoriId",
+      "bidangId",
+      "subkategoriInternalId",
+      "sub_kategori_internal_id",
+
+      // populated
+      "category._id",
+      "category.id",
+    ]);
+
+    // mapping dari categoryId (dipakai hanya kalau jenis/bidang kosong)
     if (categoryId && categoryMapById[String(categoryId)]) {
       const cat = categoryMapById[String(categoryId)];
       if (!jenisRaw && cat.name) jenisRaw = cat.name;
@@ -232,19 +327,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const jenis = labelJenis(jenisRaw);
     const tanggalRaw = p.tanggal || p.created_at || p.createdAt || null;
 
-    const dokumenRaw =
-      p.dokumen_url || p.dokumenUrl || p.dokumen || p.file || p.documentUrl || p.attachment || "";
+    // ✅ dokumenRaw: tambah alias lain supaya dokumen edit juga kebaca
+    const dokumenRaw = pickField(p, [
+      "dokumen_url",
+      "dokumenUrl",
+      "dokumen",
+      "file",
+      "documentUrl",
+      "attachment",
+      "document",
+      "dokumenLama",
+      "existingDokumen",
+      "link_dokumen",
+    ]);
 
     const isiParts = String(isi)
       .split(/\n{2,}|\r\n{2,}/)
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const kategoriLabel = jenis && bidang ? `${jenis} • ${bidang}` : bidang || jenis || "Umum";
+    // ✅ kalau bidang sudah mengandung format "Internal • X" (kadang backend simpan begini),
+    // jangan dobel.
+    let kategoriLabel = "";
+    const bidangText = safeText(bidang);
+    const jenisText = safeText(jenis);
+
+    if (bidangText.includes("•")) {
+      kategoriLabel = bidangText;
+    } else {
+      kategoriLabel = jenisText && bidangText ? `${jenisText} • ${bidangText}` : bidangText || jenisText || "Umum";
+    }
 
     const firstParagraph = isiParts[0] || "";
     const excerpt =
       firstParagraph.length > 220 ? firstParagraph.slice(0, 217).trimEnd() + "..." : firstParagraph;
+
+    // ✅ debug optional (kalau mau cek hasil edit)
+    // console.log("normalizePeraturan:", { judul, jenisRaw, bidang, categoryId, kategoriLabel });
 
     return {
       judul,

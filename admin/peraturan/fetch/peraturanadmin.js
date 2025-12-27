@@ -80,6 +80,128 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================
+  // ✅ Normalizer & helpers
+  // ============================
+  function normalizeSubkategori(value) {
+    return String(value || "")
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function prettifySpaces(value) {
+    return String(value || "")
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function debugCharCodes(label, str) {
+    try {
+      const s = String(str ?? "");
+      const codes = Array.from(s).map((ch) => ch.charCodeAt(0));
+      const hasNBSP = codes.includes(160);
+      console.log(`🧾 DEBUG ${label}:`, {
+        text: s,
+        length: s.length,
+        hasNBSP,
+        charCodes: codes,
+      });
+    } catch (e) {
+      console.warn("debugCharCodes error:", e);
+    }
+  }
+
+  function toTitleCaseKeepDan(str) {
+    const raw = prettifySpaces(str);
+    return raw
+      .split(" ")
+      .map((w) => {
+        const lw = w.toLowerCase();
+        if (lw === "dan") return "dan";
+        if (!w) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      })
+      .join(" ");
+  }
+
+  function makeSlugForms(label) {
+    const norm = normalizeSubkategori(label);
+    const snake = norm.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    const kebab = norm.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return { norm, snake, kebab };
+  }
+
+  function isObjectIdLike(v) {
+    const s = String(v || "");
+    return /^[a-f\d]{24}$/i.test(s);
+  }
+
+  function getSubkategoriVariantsForBackend(kategoriDetailRaw, kategoriDetailPretty, categoryIdResolved) {
+    const baseRaw = String(kategoriDetailRaw || "");
+    const basePretty = prettifySpaces(kategoriDetailPretty || kategoriDetailRaw || "");
+    const titlePretty = toTitleCaseKeepDan(basePretty);
+    const { norm, snake, kebab } = makeSlugForms(basePretty);
+
+    const variants = [
+      baseRaw,
+      basePretty,
+      titlePretty,
+      norm,
+      snake,
+      kebab,
+      basePretty.replace(/\s+dan\s+/gi, " & "),
+      titlePretty.replace(/\s+dan\s+/gi, " & "),
+      ...(categoryIdResolved ? [String(categoryIdResolved)] : []),
+    ].filter(Boolean);
+
+    return Array.from(new Set(variants));
+  }
+
+  // ============================
+  // ✅ RESOLVE kategori & id
+  // ============================
+  function resolveKategoriDetailAndId({ kategoriUtama, kategoriDetailRaw, kategoriDetailPretty, categoryId }) {
+    const jenisLower = String(kategoriUtama || "").toLowerCase();
+    const targetNorm = normalizeSubkategori(kategoriDetailPretty || kategoriDetailRaw);
+
+    const matches = categories.filter((c) => {
+      const name = String(c.name || "").toLowerCase();
+      const subRaw = String(c.subkategori || c.subKategori || c.sub_kategori || "");
+      return name === jenisLower && normalizeSubkategori(subRaw) === targetNorm;
+    });
+
+    let match = matches[0];
+    if (matches.length > 1) {
+      const preferred = matches.find(
+        (m) => String(m._id || m.id || m.categoryId || "") === String(categoryId || "")
+      );
+      if (preferred) match = preferred;
+    }
+
+    if (match) {
+      const resolvedId = String(match._id || match.id || match.categoryId || categoryId || "");
+      const resolvedSubRaw = String(match.subkategori || match.subKategori || match.sub_kategori || kategoriDetailRaw || "");
+      const resolvedSubPretty = prettifySpaces(resolvedSubRaw);
+
+      return {
+        resolvedKategoriDetailRaw: resolvedSubRaw,
+        resolvedKategoriDetailPretty: resolvedSubPretty,
+        resolvedCategoryId: resolvedId,
+        found: true,
+      };
+    }
+
+    return {
+      resolvedKategoriDetailRaw: String(kategoriDetailRaw || ""),
+      resolvedKategoriDetailPretty: prettifySpaces(kategoriDetailPretty || kategoriDetailRaw || ""),
+      resolvedCategoryId: String(categoryId || ""),
+      found: false,
+    };
+  }
+
+  // ============================
   // KATEGORI dari /categories
   // ============================
   function applySubkategoriOptions(jenis, preselectText) {
@@ -99,18 +221,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     filtered.forEach((c) => {
       const id = c._id || c.id || c.categoryId;
-      const sub = c.subkategori || "";
-      if (!id || !sub) return;
+      const subRaw = String(c.subkategori || c.subKategori || c.sub_kategori || "");
+      if (!id || !subRaw) return;
 
-      if (usedSubs.has(sub)) return;
-      usedSubs.add(sub);
+      const key = normalizeSubkategori(subRaw);
+      if (usedSubs.has(key)) return;
+      usedSubs.add(key);
 
       const opt = document.createElement("option");
-      opt.value = id; // value = ID kategori (disimpan di DB)
-      opt.textContent = sub; // teks yang kelihatan
-      opt.dataset.subkategori = sub;
+      opt.value = id;
+      opt.textContent = subRaw;
 
-      if (preselectText && preselectText === sub) opt.selected = true;
+      opt.dataset.subkategori = subRaw; // lama dipertahankan
+      opt.dataset.subkategoriRaw = subRaw; // baru
+      opt.dataset.subkategoriNorm = key; // baru
+
+      if (preselectText && normalizeSubkategori(preselectText) === key) opt.selected = true;
 
       selectKategoriDetail.appendChild(opt);
     });
@@ -119,22 +245,35 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadCategories() {
     if (!selectKategoriDetail) return;
 
-    try {
+    const token = getToken();
+
+    const tryFetch = async (withAuth) => {
+      const headers = { "Content-Type": "application/json" };
+      if (withAuth && token) headers.Authorization = "Bearer " + token;
+
       const res = await fetch(`${API_BASE}/categories`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
 
       const raw = await res.text();
-      let data = safeParse(raw);
+      const data = safeParse(raw);
+      return { res, data };
+    };
 
-      // beberapa backend balikin {data:[...]}
+    try {
+      let out = await tryFetch(true);
+      if (!out.res.ok && (out.res.status === 401 || out.res.status === 403)) {
+        out = await tryFetch(false);
+      }
+
+      let data = out.data;
+
       if (!Array.isArray(data)) {
         if (Array.isArray(data.data)) data = data.data;
         else if (Array.isArray(data.categories)) data = data.categories;
         else data = [];
       }
-
       if (!Array.isArray(data)) data = [];
 
       categories = data;
@@ -148,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const alreadyHasPemulihan = categories.some((c) => {
         const name = String(c.name || "").toLowerCase();
-        const sub = String(c.subkategori || "").toLowerCase();
+        const sub = String(c.subkategori || c.subKategori || c.sub_kategori || "").toLowerCase();
         return name === "internal" && sub === "pemulihan aset";
       });
 
@@ -156,13 +295,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
       internalSubs = categories
         .filter((c) => String(c.name || "").toLowerCase() === "internal")
-        .map((c) => c.subkategori)
+        .map((c) => String(c.subkategori || c.subKategori || c.sub_kategori || ""))
         .filter(Boolean);
 
       eksternalSubs = categories
         .filter((c) => String(c.name || "").toLowerCase() === "eksternal")
-        .map((c) => c.subkategori)
+        .map((c) => String(c.subkategori || c.subKategori || c.sub_kategori || ""))
         .filter(Boolean);
+
+      // debug table
+      const debugInternal = categories
+        .filter((c) => String(c.name || "").toLowerCase() === "internal")
+        .map((c) => ({
+          id: c._id || c.id || c.categoryId,
+          subkategori: c.subkategori || c.subKategori || c.sub_kategori,
+        }));
+      console.table(debugInternal);
 
       const currentJenis = selectKategoriUtama ? selectKategoriUtama.value : "";
       applySubkategoriOptions(currentJenis);
@@ -319,7 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (selectKategoriUtama) selectKategoriUtama.value = kategori || "";
           applySubkategoriOptions(kategori, bidang);
 
-          // simpan dokumen lama supaya PUT tanpa file tidak menghilangkan dokumen
+          // simpan dokumen lama
           existingDokumenValue = pick(record, ["dokumen", "dokumen_url", "dokumenUrl", "file", "attachment", "documentUrl"], "");
 
           if (dokumenUrlInput) {
@@ -402,8 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================
   // SUBMIT (POST / PUT)
   // ============================
-  function buildCommonFields({ judul, isiText, kategoriUtama, kategoriDetail, categoryId }) {
-    // banyak alias biar backend kamu “nerima”
+  function buildCommonFields({ judul, isiText, kategoriUtama, kategoriDetailRaw, kategoriDetailPretty, categoryId }) {
     return {
       judul,
       title: judul,
@@ -416,36 +563,54 @@ document.addEventListener("DOMContentLoaded", () => {
       jenis: kategoriUtama,
       type: kategoriUtama,
 
-      bidang: kategoriDetail,
-      kategoriDetail: kategoriDetail,
-      subkategori: kategoriDetail,
-      sub_kategori: kategoriDetail,
+      // kirim RAW + pretty
+      bidang: kategoriDetailRaw,
+      kategoriDetail: kategoriDetailRaw,
+      subkategori: kategoriDetailRaw,
+      sub_kategori: kategoriDetailRaw,
+
+      bidang_pretty: kategoriDetailPretty,
+      kategoriDetail_pretty: kategoriDetailPretty,
+      subkategori_pretty: kategoriDetailPretty,
 
       categoryId: categoryId,
       kategoriId: categoryId,
       category_id: categoryId,
+
+      kategoriDetailId: categoryId,
+      subkategoriId: categoryId,
+      bidangId: categoryId,
+      sub_kategori_id: categoryId,
     };
   }
 
-  function validateSubkategori(kategoriUtama, kategoriDetail) {
-    if (kategoriUtama === "internal" && internalSubs.length) {
-      if (!internalSubs.includes(kategoriDetail)) {
+  function validateSubkategori(kategoriUtama, kategoriDetailPretty) {
+    const ku = String(kategoriUtama || "").toLowerCase();
+
+    if (ku === "internal" && internalSubs.length) {
+      const targetNorm = normalizeSubkategori(kategoriDetailPretty);
+      const internalNorms = internalSubs.map((s) => normalizeSubkategori(s));
+      if (!internalNorms.includes(targetNorm)) {
         showError(
-          `Subkategori internal "${kategoriDetail}" tidak ditemukan di data /categories.\n` +
+          `Subkategori internal "${kategoriDetailPretty}" tidak ditemukan di data /categories.\n` +
             `Gunakan salah satu dari: ${internalSubs.join(", ")}`
         );
         return false;
       }
     }
-    if (kategoriUtama === "eksternal" && eksternalSubs.length) {
-      if (!eksternalSubs.includes(kategoriDetail)) {
+
+    if (ku === "eksternal" && eksternalSubs.length) {
+      const targetNorm = normalizeSubkategori(kategoriDetailPretty);
+      const eksternalNorms = eksternalSubs.map((s) => normalizeSubkategori(s));
+      if (!eksternalNorms.includes(targetNorm)) {
         showError(
-          `Subkategori eksternal "${kategoriDetail}" tidak ditemukan di data /categories.\n` +
+          `Subkategori eksternal "${kategoriDetailPretty}" tidak ditemukan di data /categories.\n` +
             `Gunakan salah satu dari: ${eksternalSubs.join(", ")}`
         );
         return false;
       }
     }
+
     return true;
   }
 
@@ -461,15 +626,19 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter((v) => v !== "");
 
     const kategoriUtama = selectKategoriUtama ? selectKategoriUtama.value : "";
+
     const selectedOption =
       selectKategoriDetail && selectKategoriDetail.selectedIndex >= 0
         ? selectKategoriDetail.options[selectKategoriDetail.selectedIndex]
         : null;
 
     const categoryId = selectedOption ? String(selectedOption.value || "") : "";
-    const kategoriDetail = selectedOption
-      ? String(selectedOption.dataset.subkategori || selectedOption.textContent || "").trim()
+
+    const kategoriDetailRaw = selectedOption
+      ? String(selectedOption.dataset.subkategoriRaw || selectedOption.dataset.subkategori || selectedOption.textContent || "")
       : "";
+
+    const kategoriDetailPretty = selectedOption ? prettifySpaces(kategoriDetailRaw) : "";
 
     if (!judul || isiList.length === 0) {
       showError("Judul dan isi peraturan wajib diisi.");
@@ -479,12 +648,35 @@ document.addEventListener("DOMContentLoaded", () => {
       showError("Pilih jenis peraturan (internal / eksternal).");
       return;
     }
-    if (!kategoriDetail) {
+    if (!kategoriDetailRaw) {
       showError("Pilih kategori / subkategori peraturan.");
       return;
     }
 
-    if (!validateSubkategori(kategoriUtama, kategoriDetail)) return;
+    debugCharCodes("kategoriDetailRaw (dari option)", kategoriDetailRaw);
+    debugCharCodes("kategoriDetailPretty (dirapikan)", kategoriDetailPretty);
+
+    const resolved = resolveKategoriDetailAndId({
+      kategoriUtama,
+      kategoriDetailRaw,
+      kategoriDetailPretty,
+      categoryId,
+    });
+
+    const kategoriDetailResolvedRaw = resolved.resolvedKategoriDetailRaw;
+    const kategoriDetailResolvedPretty = resolved.resolvedKategoriDetailPretty;
+    const categoryIdResolved = resolved.resolvedCategoryId;
+
+    console.info("✅ Subkategori resolved:", {
+      before: { kategoriDetailRaw, kategoriDetailPretty, categoryId },
+      after: { kategoriDetailResolvedRaw, kategoriDetailResolvedPretty, categoryIdResolved },
+      foundInCategories: resolved.found,
+    });
+
+    debugCharCodes("resolved RAW", kategoriDetailResolvedRaw);
+    debugCharCodes("resolved PRETTY", kategoriDetailResolvedPretty);
+
+    if (!validateSubkategori(kategoriUtama, kategoriDetailResolvedPretty)) return;
 
     const token = getToken();
     if (!token) {
@@ -493,36 +685,99 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const isiText = isiList.join("\n\n");
+
     const common = buildCommonFields({
       judul,
       isiText,
       kategoriUtama,
-      kategoriDetail,
-      categoryId,
+      kategoriDetailRaw: kategoriDetailResolvedRaw,
+      kategoriDetailPretty: kategoriDetailResolvedPretty,
+      categoryId: categoryIdResolved,
     });
 
-    const hasFile =
-      dokumenFileInput && dokumenFileInput.files && dokumenFileInput.files.length > 0;
+    const hasFile = dokumenFileInput && dokumenFileInput.files && dokumenFileInput.files.length > 0;
 
-    // URL + method
     const isEdit = !!editingId;
     const url = isEdit ? `${API_BASE}/peraturan/${editingId}` : `${API_BASE}/peraturan`;
+    const method = isEdit ? "PUT" : "POST";
+
+    const fillDokumenToFD = (fd) => {
+      fd.append("hasDokumenFile", hasFile ? "true" : "false");
+      if (hasFile) {
+        fd.append("dokumen", dokumenFileInput.files[0]);
+        fd.append("file", dokumenFileInput.files[0]);
+        fd.append("attachment", dokumenFileInput.files[0]);
+        fd.append("document", dokumenFileInput.files[0]);
+      } else if (dokumenUrlInput && dokumenUrlInput.value.trim()) {
+        fd.append("dokumen_url", dokumenUrlInput.value.trim());
+        fd.append("dokumenUrl", dokumenUrlInput.value.trim());
+      } else if (existingDokumenValue) {
+        fd.append("dokumenLama", existingDokumenValue);
+        fd.append("existingDokumen", existingDokumenValue);
+        fd.append("dokumen", existingDokumenValue);
+      }
+    };
+
+    const buildFDWithInternalValue = (internalValue) => {
+      const fd = new FormData();
+      Object.entries(common).forEach(([k, v]) => fd.append(k, v));
+
+      // penting: internal fields
+      fd.append("subkategoriInternal", String(internalValue));
+      fd.append("subKategoriInternal", String(internalValue));
+      fd.append("subkategori_internal", String(internalValue));
+
+      // label (buat display)
+      fd.append("subkategoriInternalLabel", kategoriDetailResolvedPretty);
+      fd.append("subKategoriInternalLabel", kategoriDetailResolvedPretty);
+      fd.append("subkategori_internal_label", kategoriDetailResolvedPretty);
+
+      // eksternal (tetap)
+      fd.append("subkategoriEksternal", kategoriDetailResolvedRaw);
+      fd.append("subKategoriEksternal", kategoriDetailResolvedRaw);
+      fd.append("subkategori_eksternal", kategoriDetailResolvedRaw);
+
+      // extra debug fields (aman)
+      fd.append("categoryIdResolved", String(categoryIdResolved || ""));
+      fd.append("kategoriDetailResolvedRaw", String(kategoriDetailResolvedRaw || ""));
+      fd.append("kategoriDetailResolvedPretty", String(kategoriDetailResolvedPretty || ""));
+
+      fillDokumenToFD(fd);
+      return fd;
+    };
 
     try {
       // ============================
-      // 1) EDIT TANPA FILE => JSON PUT (INI YANG BIKIN EDIT KAMU BERHASIL)
+      // 1) EDIT TANPA FILE => JSON PUT
       // ============================
       if (isEdit && !hasFile) {
-        // bawa dokumen lama kalau ada supaya gak hilang
         const dokUrl = (dokumenUrlInput && dokumenUrlInput.value.trim()) || "";
+
+        // kirim banyak alias internal sekaligus
         const payload = {
           ...common,
 
-          // kalau backend pakai dokumen_url:
-          dokumen_url: dokUrl || (String(existingDokumenValue || "").includes("http") ? existingDokumenValue : ""),
+          subkategoriInternal: kategoriDetailResolvedRaw,
+          subKategoriInternal: kategoriDetailResolvedRaw,
+          subkategori_internal: kategoriDetailResolvedRaw,
+
+          subkategoriInternalLabel: kategoriDetailResolvedPretty,
+          subKategoriInternalLabel: kategoriDetailResolvedPretty,
+          subkategori_internal_label: kategoriDetailResolvedPretty,
+
+          // juga kirim versi ID kalau backend pakai id
+          subkategoriInternalId: categoryIdResolved,
+          sub_kategori_internal_id: categoryIdResolved,
+
+          // eksternal tetap
+          subkategoriEksternal: kategoriDetailResolvedRaw,
+          subKategoriEksternal: kategoriDetailResolvedRaw,
+          subkategori_eksternal: kategoriDetailResolvedRaw,
+
+          dokumen_url:
+            dokUrl || (String(existingDokumenValue || "").includes("http") ? existingDokumenValue : ""),
           dokumenUrl: dokUrl,
 
-          // kalau backend pakai dokumen path (uploads/xxx.pdf):
           dokumen: existingDokumenValue || "",
           existingDokumen: existingDokumenValue || "",
           dokumenLama: existingDokumenValue || "",
@@ -541,9 +796,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = safeParse(text);
 
         if (!res.ok) {
-          console.error("❌ Error PUT(JSON) /peraturan/:id:", res.status, data);
-
-          // fallback: beberapa backend maunya PATCH
           const res2 = await fetch(url, {
             method: "PATCH",
             headers: {
@@ -565,7 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showSuccess("Data peraturan berhasil diperbarui.");
 
-        // reset form
+        // reset
         editingId = null;
         existingDokumenValue = "";
         if (formPeraturan) formPeraturan.reset();
@@ -593,63 +845,63 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // ============================
-      // 2) TAMBAH / EDIT DENGAN FILE => FormData (POST/PUT)
+      // 2) TAMBAH / EDIT DENGAN FILE => FormData
       // ============================
-      const fd = new FormData();
-
-      // append common fields + alias
-      Object.entries(common).forEach(([k, v]) => fd.append(k, v));
-
-      // alias tambahan yang sering dipakai
-      fd.append("subkategoriInternal", kategoriDetail);
-      fd.append("subKategoriInternal", kategoriDetail);
-      fd.append("subkategori_internal", kategoriDetail);
-
-      fd.append("subkategoriEksternal", kategoriDetail);
-      fd.append("subKategoriEksternal", kategoriDetail);
-      fd.append("subkategori_eksternal", kategoriDetail);
-
-      // dokumen: file atau url
-      fd.append("hasDokumenFile", hasFile ? "true" : "false");
-
-      if (hasFile) {
-        fd.append("dokumen", dokumenFileInput.files[0]);
-        fd.append("file", dokumenFileInput.files[0]);
-        fd.append("attachment", dokumenFileInput.files[0]);
-        fd.append("document", dokumenFileInput.files[0]);
-      } else if (dokumenUrlInput && dokumenUrlInput.value.trim()) {
-        fd.append("dokumen_url", dokumenUrlInput.value.trim());
-        fd.append("dokumenUrl", dokumenUrlInput.value.trim());
-      } else if (existingDokumenValue) {
-        // jaga-jaga agar backend gak ngeblank-in dokumen
-        fd.append("dokumenLama", existingDokumenValue);
-        fd.append("existingDokumen", existingDokumenValue);
-        fd.append("dokumen", existingDokumenValue);
-      }
-
-      const method = isEdit ? "PUT" : "POST";
-
-      const res = await fetch(url, {
+      // attempt pertama: RAW
+      let res = await fetch(url, {
         method,
-        headers: {
-          Authorization: "Bearer " + token,
-          // JANGAN set Content-Type agar boundary multipart benar
-        },
-        body: fd,
+        headers: { Authorization: "Bearer " + token },
+        body: buildFDWithInternalValue(kategoriDetailResolvedRaw),
       });
 
-      const text = await res.text();
-      const data = safeParse(text);
+      let text = await res.text();
+      let data = safeParse(text);
+
+      if (!res.ok) {
+        const errMsg = String(extractErr(data) || "").toLowerCase();
+        const isSubInvalid = errMsg.includes("subkategori internal tidak valid");
+
+        if (isSubInvalid) {
+          const variants = getSubkategoriVariantsForBackend(
+            kategoriDetailResolvedRaw,
+            kategoriDetailResolvedPretty,
+            categoryIdResolved
+          );
+
+          console.warn("⚠️ Backend nolak subkategori internal. Coba variants:", variants);
+
+          for (const v of variants) {
+            const resTry = await fetch(url, {
+              method,
+              headers: { Authorization: "Bearer " + token },
+              body: buildFDWithInternalValue(v),
+            });
+
+            const textTry = await resTry.text();
+            const dataTry = safeParse(textTry);
+
+            if (resTry.ok) {
+              console.info("✅ Retry sukses pakai internalValue:", v);
+              res = resTry;
+              text = textTry;
+              data = dataTry;
+              break;
+            } else {
+              console.warn("❌ Retry gagal pakai internalValue:", v, dataTry);
+            }
+          }
+        }
+      }
 
       if (!res.ok) {
         console.error(`❌ Error ${method} /peraturan:`, res.status, data);
 
-        // fallback PATCH multipart (beberapa API pakai PATCH)
         if (isEdit) {
+          // fallback PATCH multipart
           const res2 = await fetch(url, {
             method: "PATCH",
             headers: { Authorization: "Bearer " + token },
-            body: fd,
+            body: buildFDWithInternalValue(kategoriDetailResolvedRaw),
           });
 
           const text2 = await res2.text();
@@ -668,7 +920,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showSuccess(isEdit ? "Data peraturan berhasil diperbarui." : "Data peraturan berhasil disimpan.");
 
-      // reset form
+      // reset
       editingId = null;
       existingDokumenValue = "";
       if (formPeraturan) formPeraturan.reset();
