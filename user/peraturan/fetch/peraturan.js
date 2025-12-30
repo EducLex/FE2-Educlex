@@ -11,13 +11,148 @@ document.addEventListener("DOMContentLoaded", () => {
   const docCandidatesByIndex = new Map(); // index -> [url...]
   const resolvedDocUrlByIndex = new Map(); // index -> url
 
+  // ✅ NEW: simpan semua data + state filter jenis
+  let allPeraturan = [];
+  let currentJenisFilter = ""; // "", "internal", "eksternal"
+
   if (container) container.classList.add("peraturan-root");
+
+  // ==========================
+  // ✅ Dropdown "Peraturan" di navbar + filter
+  // ==========================
+  const peraturanToggle = document.getElementById("peraturanToggle");
+  const peraturanNavMenu = document.getElementById("peraturanNavMenu");
+
+  function getJenisFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const jenis = (params.get("jenis") || "").toLowerCase().trim();
+    if (jenis === "internal" || jenis === "eksternal") return jenis;
+    return "";
+  }
+
+  function setJenisToUrl(jenis) {
+    const url = new URL(window.location.href);
+    if (!jenis) url.searchParams.delete("jenis");
+    else url.searchParams.set("jenis", jenis);
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function closePeraturanMenu() {
+    if (peraturanNavMenu) peraturanNavMenu.classList.remove("show");
+  }
+
+  function togglePeraturanMenu() {
+    if (!peraturanNavMenu) return;
+    peraturanNavMenu.classList.toggle("show");
+  }
+
+  if (peraturanToggle && peraturanNavMenu) {
+    peraturanToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      togglePeraturanMenu();
+    });
+
+    peraturanNavMenu.addEventListener("click", (e) => {
+      const link = e.target.closest("a[data-jenis]");
+      if (!link) return;
+
+      e.preventDefault();
+      const jenis = (link.getAttribute("data-jenis") || "").toLowerCase().trim();
+
+      currentJenisFilter = (jenis === "internal" || jenis === "eksternal") ? jenis : "";
+      setJenisToUrl(currentJenisFilter);
+      closePeraturanMenu();
+      applyFilterAndRender();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!peraturanNavMenu.classList.contains("show")) return;
+      const inside = e.target.closest("#peraturanNavMenu") || e.target.closest("#peraturanToggle");
+      if (!inside) closePeraturanMenu();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closePeraturanMenu();
+    });
+  }
+
+  // set filter awal dari URL
+  currentJenisFilter = getJenisFromUrl();
 
   // ==========================
   // Helpers
   // ==========================
   function safeText(v) {
     return String(v ?? "").trim();
+  }
+
+  // ✅ NEW: normalisasi value internal/eksternal dari string apapun
+  function normalizeJenisValue(v) {
+    const s = String(v ?? "").toLowerCase().trim();
+    if (!s) return "";
+    // kalau ada kata internal/eksternal di mana pun, anggap itu
+    if (s.includes("internal")) return "internal";
+    if (s.includes("eksternal") || s.includes("external")) return "eksternal";
+    return "";
+  }
+
+  // ✅ NEW: deteksi jenis dari banyak sumber (field raw + label gabungan)
+  function detectJenisLower(rawObj, jenisRawMaybe, kategoriLabelMaybe) {
+    // 1) dari jenisRaw hasil pickField (yang sudah ada)
+    const j1 = normalizeJenisValue(jenisRawMaybe);
+    if (j1) return j1;
+
+    // 2) dari label gabungan (mis: "Internal • Pidana Umum")
+    const j2 = normalizeJenisValue(kategoriLabelMaybe);
+    if (j2) return j2;
+
+    // 3) dari beberapa key yang sering kepakai backend
+    const possibleKeys = [
+      "jenis",
+      "type",
+      "kategoriUtama",
+      "kategori",
+      "kategori_raw",
+      "kategori_utama",
+      "jenis_raw",
+      "type_raw",
+      "category",
+      "category.name",
+      "category.type",
+      "kategoriNama",
+      "kategori_nama",
+      "jenisPeraturan",
+      "jenis_peraturan",
+    ];
+
+    for (const k of possibleKeys) {
+      try {
+        const parts = String(k).split(".");
+        let val = rawObj;
+        for (const p of parts) {
+          if (val && Object.prototype.hasOwnProperty.call(val, p)) val = val[p];
+          else {
+            val = undefined;
+            break;
+          }
+        }
+        const hit = normalizeJenisValue(val);
+        if (hit) return hit;
+      } catch {
+        // ignore
+      }
+    }
+
+    // 4) last resort: scan value string di object (super fallback)
+    try {
+      const flat = JSON.stringify(rawObj).toLowerCase();
+      if (flat.includes("internal")) return "internal";
+      if (flat.includes("eksternal") || flat.includes("external")) return "eksternal";
+    } catch {
+      // ignore
+    }
+
+    return "";
   }
 
   // ✅ NEW: pick field dari banyak alias (biar kategori/subkategori edit kebaca)
@@ -163,12 +298,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return await res.blob();
   }
 
-  async function openBlobInNewTab(blob) {
-    const blobUrl = URL.createObjectURL(blob);
-    window.open(blobUrl, "_blank", "noopener");
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-  }
-
   async function downloadBlob(blob, filename) {
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -191,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
       await downloadBlob(blob, filename || guessFileNameFromUrl(url));
       return true;
     } catch (e) {
-      // fallback: tetap buka (user bisa save manual)
       openUrlInNewTab(url);
       return false;
     }
@@ -256,39 +384,29 @@ document.addEventListener("DOMContentLoaded", () => {
     ]);
 
     // ✅ ambil bidang/subkategori dari banyak alias (ini yang bikin edit kategori kebaca)
-    // prioritas: field yang biasanya diupdate di admin
     let bidang = pickField(p, [
-      // yang paling sering dipakai
       "bidang",
       "kategoriDetail",
       "subkategori",
       "subKategori",
       "sub_kategori",
-
-      // versi pretty / label (sering disimpan saat edit)
       "bidang_pretty",
       "kategoriDetail_pretty",
       "subkategori_pretty",
       "subkategoriInternalLabel",
       "subKategoriInternalLabel",
       "subkategori_internal_label",
-
-      // versi internal/eksternal (sering ada di backend)
       "subkategoriInternal",
       "subKategoriInternal",
       "subkategori_internal",
       "subkategoriEksternal",
       "subKategoriEksternal",
       "subkategori_eksternal",
-
-      // fallback lain kalau backend pakai nama beda
       "bidangLabel",
       "kategoriLabel",
       "kategori_detail",
       "kategoriDetailRaw",
       "bidangRaw",
-
-      // populated
       "category.subkategori",
     ]);
 
@@ -298,16 +416,12 @@ document.addEventListener("DOMContentLoaded", () => {
       "category_id",
       "kategoriId",
       "kategori_id",
-
-      // alias tambahan yg sering dipakai
       "categoryIdResolved",
       "kategoriDetailId",
       "subkategoriId",
       "bidangId",
       "subkategoriInternalId",
       "sub_kategori_internal_id",
-
-      // populated
       "category._id",
       "category.id",
     ]);
@@ -346,8 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    // ✅ kalau bidang sudah mengandung format "Internal • X" (kadang backend simpan begini),
-    // jangan dobel.
+    // ✅ kalau bidang sudah mengandung format "Internal • X", jangan dobel.
     let kategoriLabel = "";
     const bidangText = safeText(bidang);
     const jenisText = safeText(jenis);
@@ -362,8 +475,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const excerpt =
       firstParagraph.length > 220 ? firstParagraph.slice(0, 217).trimEnd() + "..." : firstParagraph;
 
-    // ✅ debug optional (kalau mau cek hasil edit)
-    // console.log("normalizePeraturan:", { judul, jenisRaw, bidang, categoryId, kategoriLabel });
+    // ✅ 기존 (tetap ada)
+    const jenisLower = (jenisText || "").toLowerCase();
+
+    // ✅ UPDATE: deteksi lebih kuat biar filter internal/eksternal pasti kebaca
+    const jenisLowerDetected = detectJenisLower(p, jenisRaw, kategoriLabel);
+    const jenisLowerFinal =
+      (jenisLower === "internal" || jenisLower === "eksternal") ? jenisLower :
+      (jenisLowerDetected ? jenisLowerDetected : "");
 
     return {
       judul,
@@ -373,6 +492,9 @@ document.addEventListener("DOMContentLoaded", () => {
       isiParts,
       excerpt,
       dokumenRaw: safeText(dokumenRaw),
+
+      // ✅ jangan hapus field ini (dipakai filter)
+      jenisLower: jenisLowerFinal,
     };
   }
 
@@ -467,6 +589,29 @@ document.addEventListener("DOMContentLoaded", () => {
     container.innerHTML = `<div class="artikel-grid peraturan-grid">${cardsHtml}</div>`;
   }
 
+  // ✅ UPDATE: filter makin toleran (kalau jenisLower kosong, pakai kategori text)
+  function applyFilterAndRender() {
+    if (!allPeraturan.length) {
+      renderPeraturan([]);
+      return;
+    }
+
+    let filtered = allPeraturan;
+
+    if (currentJenisFilter === "internal" || currentJenisFilter === "eksternal") {
+      filtered = allPeraturan.filter((p) => {
+        const jl = (p.jenisLower || "").toLowerCase().trim();
+        if (jl === currentJenisFilter) return true;
+
+        // fallback: cek text label kategori (sering berisi "Internal • ...")
+        const kt = String(p.kategori || "").toLowerCase();
+        return kt.includes(currentJenisFilter);
+      });
+    }
+
+    renderPeraturan(filtered);
+  }
+
   // ==========================
   // GET /peraturan
   // ==========================
@@ -517,7 +662,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return db - da;
       });
 
-      renderPeraturan(normalized);
+      // ✅ simpan semua, lalu render pakai filter
+      allPeraturan = normalized;
+      applyFilterAndRender();
     } catch (err) {
       console.error("❌ Error GET /peraturan:", err);
       if (container) {

@@ -106,21 +106,20 @@
         autocomplete="name"
       />
 
-      <!-- Dropdown 1: Jenis (Internal/Eksternal) -->
+      <!-- ✅ Jenis FIX Internal (tanpa Eksternal) -->
       <label for="jenisPeraturan" class="label-tanya">Jenis</label>
-      <select id="jenisPeraturan" class="input-tanya">
-        <option value="Internal">Internal</option>
-        <option value="Eksternal">Eksternal</option>
+      <select id="jenisPeraturan" class="input-tanya" disabled>
+        <option value="Internal" selected>Internal</option>
       </select>
 
-      <!-- Dropdown 2: Kategori/Bidang dari /categories (tergantung jenis) -->
+      <!-- Dropdown 2: Kategori/Bidang dari /categories (khusus Internal) -->
       <label for="bidangKategori" class="label-tanya">Kategori Hukum (Bidang)</label>
       <select id="bidangKategori" class="input-tanya" disabled>
         <option value="">Memuat kategori...</option>
       </select>
 
       <small style="display:block; margin-top:6px; color:#6d4c41; font-family:'Open Sans', sans-serif;">
-        Pilih <b>Jenis</b> dulu, nanti kategori akan menyesuaikan otomatis.
+        <b>Jenis otomatis Internal</b>, pilih kategori/subkategori di bawah.
       </small>
 
       <label for="isiTanya" class="label-tanya" style="margin-top:12px;">Isi Pertanyaan</label>
@@ -196,7 +195,7 @@
   </script>
 
   <script src="/auth/login.js"></script>
-<script src="/user/tanyajaksa/fetch/tanya.js" defer></script>
+  <script src="/user/tanyajaksa/fetch/tanya.js" defer></script>
 
   <!-- Logout handler -->
   <script src="/auth/fetch/logout.js" defer></script>

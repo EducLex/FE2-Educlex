@@ -7,6 +7,9 @@
     return document.getElementById(id);
   }
 
+  // ✅ paksa jenis hanya Internal (eksternal tidak dipakai)
+  const FORCE_JENIS_INTERNAL = true;
+
   // ==================================================
   // AUTH: LOGIN VALID HANYA DARI sessionStorage
   // ==================================================
@@ -88,7 +91,6 @@
       btn.textContent = name ? `👤 ${name} ▾` : "👤 Akun ▾";
     }
 
-    // optional: toggle menu login/logout kalau elemennya ada
     const loginLink = document.getElementById("loginLink");
     const logoutBtn = document.getElementById("btn-logout");
     const logged = hasValidLogin();
@@ -122,6 +124,59 @@
     return fallback;
   }
 
+  // ✅ NEW: ambil timestamp untuk sorting + tampilan waktu
+  function getQuestionTime(q) {
+    const raw = pickField(
+      q,
+      ["createdAt", "created_at", "tanggal", "date", "time", "updatedAt", "updated_at"],
+      ""
+    );
+
+    const t = raw ? new Date(raw).getTime() : NaN;
+    if (Number.isFinite(t)) return t;
+
+    const rawNum = Number(pickField(q, ["timestamp", "created", "time_ms"], "NaN"));
+    if (Number.isFinite(rawNum)) return rawNum;
+
+    // fallback: ObjectId mongo punya timestamp di 8 char awal
+    try {
+      const id = String(q?._id || q?.id || "").trim();
+      if (id && /^[a-f0-9]{24}$/i.test(id)) {
+        const tsHex = id.substring(0, 8);
+        const ts = parseInt(tsHex, 16) * 1000;
+        if (Number.isFinite(ts)) return ts;
+      }
+    } catch {}
+
+    return 0;
+  }
+
+  function sortNewestFirst(arr) {
+    if (!Array.isArray(arr)) return arr;
+    return arr.slice().sort((a, b) => getQuestionTime(b) - getQuestionTime(a));
+  }
+
+  // ✅ NEW: format waktu Indonesia (biar enak dibaca)
+  function formatWaktuId(ms) {
+    try {
+      if (!ms || !Number.isFinite(ms)) return "-";
+      const d = new Date(ms);
+      // contoh: 30/12/25 14.05
+      const tanggal = d.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      });
+      const jam = d.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `${tanggal} ${jam}`;
+    } catch {
+      return "-";
+    }
+  }
+
   // ==================================================
   // INIT helper (works even if DOMContentLoaded already fired)
   // ==================================================
@@ -145,6 +200,12 @@
     const inputNama = $("namaUser");
     const inputIsi = $("isiTanya");
 
+    // ✅ kunci jenis jadi Internal
+    if (FORCE_JENIS_INTERNAL && selectJenis) {
+      selectJenis.value = "Internal";
+      selectJenis.disabled = true;
+    }
+
     // pastiin modal mulai dari tutup
     if (modal) modal.style.display = "none";
 
@@ -160,7 +221,6 @@
 
     // ==================================================
     // 🔥 PENCEGAH MODAL “KEBUKA SENDIRI” SAAT BELUM LOGIN
-    // Ini ngeblok semua script lain yang mungkin buka modal.
     // ==================================================
     if (modal && typeof MutationObserver !== "undefined") {
       const obs = new MutationObserver(() => {
@@ -185,7 +245,6 @@
       btnAjukan.type = "button";
       btnAjukan.onclick = null;
       btnAjukan.removeAttribute("onclick");
-      // jaga-jaga kalau ada atribut modal framework
       btnAjukan.removeAttribute("data-toggle");
       btnAjukan.removeAttribute("data-target");
       btnAjukan.removeAttribute("data-bs-toggle");
@@ -194,9 +253,6 @@
 
     // ==================================================
     // ✅ Klik Ajukan:
-    // - kalau belum login => redirect login (modal gak boleh kebuka)
-    // - kalau sudah login => modal kebuka
-    // Pakai handler LANGSUNG di tombol + capture biar menang lawan event lain.
     // ==================================================
     if (btnAjukan) {
       btnAjukan.addEventListener(
@@ -209,7 +265,6 @@
           if (modal) modal.style.display = "none";
 
           if (!hasValidLogin()) {
-            // extra-safety: paksa modal tetap ketutup sebelum pindah halaman
             if (modal) {
               modal.style.display = "none";
               requestAnimationFrame(() => (modal.style.display = "none"));
@@ -217,6 +272,12 @@
             }
             redirectToLogin();
             return;
+          }
+
+          // ✅ pastikan internal tiap modal dibuka
+          if (FORCE_JENIS_INTERNAL && selectJenis) {
+            selectJenis.value = "Internal";
+            selectJenis.disabled = true;
           }
 
           if (modal) modal.style.display = "flex";
@@ -261,11 +322,15 @@
       return String(cat?.subkategori || "Tanpa Nama");
     }
 
+    // ✅ hanya render kategori Internal
     function renderKategoriByJenis(jenisUi) {
       if (!selectKategori) return;
 
-      const jenis = String(jenisUi || "").toLowerCase().trim();
-      if (!jenis) {
+      let jenis = String(jenisUi || "").toLowerCase().trim();
+
+      if (FORCE_JENIS_INTERNAL) {
+        jenis = "internal";
+      } else if (!jenis) {
         setKategoriPlaceholder("Pilih jenis dulu");
         return;
       }
@@ -273,7 +338,7 @@
       const filtered = allCategories.filter((c) => catJenisNormalized(c) === jenis);
 
       if (!filtered.length) {
-        setKategoriPlaceholder(`Tidak ada kategori untuk ${jenisUi}`);
+        setKategoriPlaceholder(`Tidak ada kategori untuk ${FORCE_JENIS_INTERNAL ? "Internal" : jenisUi}`);
         return;
       }
 
@@ -304,7 +369,7 @@
     }
 
     async function loadCategories() {
-      if (!selectJenis || !selectKategori) return;
+      if (!selectKategori) return;
 
       setKategoriPlaceholder("Memuat kategori...");
 
@@ -334,13 +399,14 @@
         }
 
         allCategories = cats;
-        renderKategoriByJenis(selectJenis.value || "Internal");
+        renderKategoriByJenis("Internal");
       } catch (err) {
         console.error("❌ FETCH /categories error:", err);
         setKategoriPlaceholder("Gagal memuat kategori");
       }
     }
 
+    // listener tetap ada (tidak dihapus)
     if (selectJenis) {
       selectJenis.addEventListener("change", () => {
         renderKategoriByJenis(selectJenis.value);
@@ -368,6 +434,10 @@
         const bidang = pickField(q, ["bidang_nama", "kategori", "bidang", "jenis"], "-");
         const pertanyaan = pickField(q, ["pertanyaan", "question", "isi", "content"], "(Tidak ada teks)");
 
+        // ✅ NEW: waktu di kanan
+        const waktuMs = getQuestionTime(q);
+        const waktuTampil = formatWaktuId(waktuMs);
+
         const card = document.createElement("div");
         card.className = "card-pertanyaan";
         card.style.background = "#ffffff";
@@ -382,11 +452,37 @@
             ${pertanyaan.length > 80 ? pertanyaan.slice(0, 77) + "..." : pertanyaan}
           </h3>
 
-          <p style="margin:0 0 8px;font-size:0.9rem;color:#6d4c41;font-family:'Poppins', sans-serif;">
-            <strong>Penanya:</strong> ${nama}
-            &nbsp; | &nbsp;
-            <strong>Bidang:</strong> ${bidang}
-          </p>
+          <!-- ✅ UPDATE: baris info jadi flex, waktu di kanan -->
+          <div style="
+            margin:0 0 8px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            flex-wrap:wrap;
+            font-size:0.9rem;
+            color:#6d4c41;
+            font-family:'Poppins', sans-serif;
+          ">
+            <div>
+              <strong>Penanya:</strong> ${nama}
+              &nbsp; | &nbsp;
+              <strong>Bidang:</strong> ${bidang}
+            </div>
+
+            <div style="
+              margin-left:auto;
+              font-size:0.82rem;
+              color:#8d6e63;
+              background:#f9f3ef;
+              padding:4px 10px;
+              border-radius:999px;
+              border:1px solid #f0dfd4;
+              white-space:nowrap;
+            " title="Waktu bertanya">
+              🕒 ${waktuTampil}
+            </div>
+          </div>
 
           <p style="margin:0 0 10px;font-size:0.95rem;color:#424242;line-height:1.5;font-family:'Open Sans', sans-serif;">
             ${pertanyaan}
@@ -425,7 +521,8 @@
           ? data.questions
           : [];
 
-        allQuestions = questions;
+        // ✅ newest-first
+        allQuestions = sortNewestFirst(questions);
         renderQuestions(allQuestions);
       } catch (err) {
         console.error("❌ FETCH /questions error:", err);
@@ -526,7 +623,9 @@
         const nama = inputNama?.value?.trim() || "";
         const isi = inputIsi?.value?.trim() || "";
 
-        const jenis = selectJenis?.value || "";
+        // ✅ jenis selalu Internal
+        const jenis = FORCE_JENIS_INTERNAL ? "Internal" : (selectJenis?.value || "");
+
         const kategoriId = selectKategori?.value || "";
         const kategoriNama =
           selectKategori?.options?.[selectKategori.selectedIndex]?.text || "";

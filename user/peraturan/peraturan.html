@@ -21,6 +21,62 @@
 
   <!-- ✅ SweetAlert2 (buat logout bagus) -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- ✅ Tambahan: dropdown Peraturan mengambang -->
+  <style>
+    .nav-links li.nav-dropdown {
+      position: relative;
+    }
+
+    /* tombol "Peraturan ▾" */
+    .nav-links li.nav-dropdown > a#peraturanToggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    /* menu mengambang */
+    .nav-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      min-width: 190px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      padding: 8px;
+      z-index: 9999;
+      display: none;
+    }
+
+    .nav-dropdown-menu.show {
+      display: block;
+    }
+
+    .nav-dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: #4e342e;
+      text-decoration: none;
+      font-weight: 600;
+      font-family: "Poppins", sans-serif;
+      white-space: nowrap;
+    }
+
+    .nav-dropdown-menu a:hover {
+      background: rgba(78, 52, 46, 0.08);
+    }
+
+    /* kecilin icon biar mirip contoh */
+    .nav-dropdown-menu .icon {
+      width: 18px;
+      text-align: center;
+    }
+  </style>
 </head>
 
 <body>
@@ -34,7 +90,25 @@
         <li><a href="/user/artikel/artikel.html">Artikel</a></li>
         <li><a href="/user/tanyajaksa/tanya.html">Tanya Jaksa</a></li>
         <li><a href="/user/tulisan/tulisan.html">Tulisan Jaksa</a></li>
-        <li><a href="/user/peraturan/peraturan.html" class="active">Peraturan</a></li>
+
+        <!-- ✅ Peraturan jadi dropdown mengambang -->
+        <li class="nav-dropdown">
+          <a href="/user/peraturan/peraturan.html" class="active" id="peraturanToggle">
+            Peraturan <span aria-hidden="true">▾</span>
+          </a>
+
+          <div class="nav-dropdown-menu" id="peraturanNavMenu" aria-label="Menu Peraturan">
+            <a href="/user/peraturan/peraturan.html" data-jenis="">
+              <span class="icon">📚</span> Semua
+            </a>
+            <a href="/user/peraturan/peraturan.html?jenis=internal" data-jenis="internal">
+              <span class="icon">🏛️</span> Internal
+            </a>
+            <a href="/user/peraturan/peraturan.html?jenis=eksternal" data-jenis="eksternal">
+              <span class="icon">🌐</span> Eksternal
+            </a>
+          </div>
+        </li>
       </ul>
 
       <div class="dropdown">
