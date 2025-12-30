@@ -216,7 +216,6 @@ body {
   color: #777;
 }
 
-
 /* Grid kartu peraturan – mirip kartu artikel */
 .peraturan-grid {
   display: grid;
@@ -335,6 +334,64 @@ body {
   font-size: 14px;
 }
 
+/* =========================================================
+   ✅ UPDATE - SEJAJAR + SPACE BAWAH DIKIT
+   Pakai GRID di body, bukan min-height besar.
+========================================================= */
+
+/* Card: rapihin padding bawah (biar space bawah tipis) */
+.peraturan-card {
+  padding-bottom: 18px;
+}
+
+/* Body jadi grid: 4 baris -> header, excerpt, doc actions, baca */
+.peraturan-card .artikel-body {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 10px;
+}
+
+/* Clamp judul 2 baris biar header rata */
+.peraturan-card .artikel-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Clamp excerpt 5 baris biar tombol rata */
+.peraturan-card .artikel-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  max-height: calc(1.7em * 5);
+  margin-bottom: 0; /* gap grid udah ngatur */
+}
+
+/* Tombol doc: rapetin + jangan bikin jarak aneh */
+.peraturan-card .peraturan-doc-actions,
+.peraturan-card .artikel-doc-actions {
+  margin-top: 0;       /* penting: jangan auto dorong mentok bawah */
+  margin-bottom: 0;
+  gap: 10px;
+}
+
+/* Baca selengkapnya rapet */
+.peraturan-card .btn-detail-peraturan {
+  margin-top: 0;
+  justify-self: center;
+}
+
+/* tombol konsisten */
+.peraturan-card .btn-doc {
+  min-height: 36px;
+}
+
+/* Full content saat dibuka */
+.peraturan-card .peraturan-full {
+  margin-top: 12px;
+}
 
 /* =========================================
    FOOTER (SAMA DENGAN index.css)
@@ -377,6 +434,12 @@ footer a:hover {
     padding: 14px 16px;
     font-size: 1em;
   }
+
+  /* biar teks tetep kebaca di tablet */
+  .peraturan-card .artikel-excerpt {
+    -webkit-line-clamp: 6;
+    max-height: calc(1.7em * 6);
+  }
 }
 
 @media (max-width: 480px) {
@@ -387,6 +450,14 @@ footer a:hover {
   }
   .navbar .nav-links {
     flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .artikel-doc-actions {
+    gap: 10px;
+  }
+  .btn-doc {
+    width: 100%;
     justify-content: center;
   }
 }

@@ -261,7 +261,6 @@ body {
   background: #4e342e;
 }
 
-
 /* Kartu artikel */
 .artikel-card {
   background: #fff;
@@ -351,13 +350,11 @@ body {
   padding-bottom: 4px;
 }
 
-
 .artikel-card a.pdf-pill > img.pdf-icon-img {
   width: 72px !important;
   max-width: 72px !important;
   height: auto !important;
 }
-
 
 /* Tombol Baca Selengkapnya */
 .btn-detail {
@@ -385,15 +382,9 @@ body {
   transform: translateY(-1px);
 }
 
-
 /* =========================================
    FOOTER (disesuaikan agar hanya 1 footer utama)
 ========================================= */
-
-/* Hapus footer kedua yang berlebihan di HTML agar tidak bentrok */
-/* Tapi jika ingin tetap punya footer seperti di index, cukup gunakan satu */
-
-/* Footer utama (sama seperti di index.css) */
 footer {
   font-family: "Poppins", sans-serif;
   background-color: #5d4037;
@@ -418,8 +409,6 @@ footer a {
 footer a:hover {
   color: #d7ccc8;
 }
-
-/* Hapus footer duplikat dari HTML agar tidak muncul dua kali */
 
 /* =========================================
    RESPONSIVE
@@ -456,5 +445,93 @@ footer a:hover {
 
   .artikel-container h1 {
     font-size: 1.7rem;
+  }
+}
+
+/* =========================================================
+   ✅ UPDATE - SAMAKAN FEEL DENGAN peraturan.css
+   - kartu lebih rapi
+   - judul & excerpt di-clamp supaya button sejajar
+   - space bawah minim
+========================================================= */
+
+/* Grid artikel biar lebih "peraturan vibes" */
+.artikel-grid {
+  gap: 32px;
+  margin-top: 24px;
+}
+
+/* Card style lebih mirip peraturan */
+.artikel-card {
+  background: #fff8f3;
+  border-radius: 24px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+  padding: 26px 26px 14px; /* padding bawah kecil */
+  cursor: default; /* biar gak misleading, karena kliknya biasanya tombol/modal */
+}
+
+/* Body jadi GRID biar posisi tombol konsisten */
+.artikel-card .artikel-body {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 10px;
+  padding: 0; /* override padding lama */
+}
+
+/* Judul clamp 2 baris */
+.artikel-card h3,
+.artikel-card .artikel-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Excerpt clamp biar sejajar */
+.artikel-card p,
+.artikel-card .artikel-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  max-height: calc(1.7em * 5);
+  margin-bottom: 0;
+}
+
+/* Meta/label tetap rapi */
+.artikel-meta {
+  margin-bottom: 0;
+}
+
+/* PDF pill jangan bikin jarak kebanyakan */
+.pdf-pill {
+  margin: 0 auto;
+}
+
+/* Tombol baca selengkapnya mirip peraturan */
+.btn-detail {
+  justify-self: center;
+  margin-top: 4px;
+  margin-bottom: 0;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: #5d4037;
+  font-size: 14px;
+}
+
+/* hover tetap cakep */
+.btn-detail:hover {
+  background: #4e342e;
+  transform: translateY(-1px);
+}
+
+/* tablet tweak: tampilkan excerpt sedikit lebih banyak */
+@media (max-width: 768px) {
+  .artikel-card p,
+  .artikel-card .artikel-excerpt {
+    -webkit-line-clamp: 6;
+    max-height: calc(1.7em * 6);
   }
 }
