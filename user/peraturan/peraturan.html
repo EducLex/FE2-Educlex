@@ -93,7 +93,8 @@
 
         <!-- ✅ Peraturan jadi dropdown mengambang -->
         <li class="nav-dropdown">
-          <a href="/user/peraturan/peraturan.html" class="active" id="peraturanToggle">
+          <!-- ✅ UPDATE: href dibuat "#" biar kliknya gak nge-navigate duluan -->
+          <a href="#" class="active" id="peraturanToggle">
             Peraturan <span aria-hidden="true">▾</span>
           </a>
 
@@ -194,6 +195,17 @@
       Berkolaborasi dengan Kejaksaan Tinggi Jawa Barat.
     </p>
   </footer>
+
+  <!-- ✅ Tambahan kecil: pastiin toggle dropdown gak nge-redirect -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const toggle = document.getElementById("peraturanToggle");
+      if (!toggle) return;
+      toggle.addEventListener("click", function (e) {
+        e.preventDefault();
+      });
+    });
+  </script>
 
   <!-- Page JS -->
   <script src="/user/peraturan/fetch/peraturan.js"></script>

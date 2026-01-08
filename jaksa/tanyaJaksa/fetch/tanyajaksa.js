@@ -14,9 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalKategori = document.getElementById("modalKategori");
   const jawabanText = document.getElementById("jawabanText");
 
+  // ✅ tambahan: tombol profil
+  const openProfileEl = document.getElementById("openProfileJaksa");
+
   let currentQuestionId = null;
   let allQuestions = [];
   let currentMode = "jawab"; // "jawab" | "edit"
+
+  // ✅ tambahan: bidang jaksa yang login (nama bidang)
+  let currentJaksaBidangNama = ""; // mis: "pembinaan"
 
   // ====================================
   // ✅ Helper: auth guard + redirect
@@ -58,9 +64,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ✅ Kunci halaman jaksa dari awal (biar gak bisa akses tanpa token)
-  // Kalau kamu memang sengaja mau halaman ini kebuka tanpa login, tinggal hapus baris ini.
   if (!requireLogin({ showAlert: true })) {
     return; // stop semua inisialisasi
+  }
+
+  // ====================================
+  // ✅ TAMBAHAN: klik ikon/nama jaksa -> profile page
+  // ====================================
+  if (openProfileEl) {
+    openProfileEl.addEventListener("click", () => {
+      // pakai path profile kamu yang di screenshot
+      window.location.href = "/jaksa/profilejaksa/pfjaksa.html";
+    });
   }
 
   // ====================================
@@ -74,6 +89,186 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     return fallback;
+  }
+
+  // ====================================
+  // ✅ TAMBAHAN: normalisasi string bidang (biar match enak)
+  // ====================================
+  function normText(s) {
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  // ====================================
+  // ✅ TAMBAHAN: set nama jaksa di header (kalau ada)
+  // ====================================
+  (function setHeaderName() {
+    const jaksaNameEl = document.getElementById("jaksaName");
+    const storedName =
+      localStorage.getItem("jaksaName") ||
+      localStorage.getItem("username") ||
+      localStorage.getItem("name");
+    if (jaksaNameEl && storedName) jaksaNameEl.textContent = storedName;
+  })();
+
+  // ====================================
+  // ✅ TAMBAHAN: Ambil bidang jaksa login
+  // Prioritas:
+  // 1) localStorage.jaksaBidangNama (kalau kamu simpan)
+  // 2) localStorage.jaksaBidang / bidang (string)
+  // 3) fetch /jaksa (list) lalu cocokkan pakai jaksaId/email/nama
+  //    + map bidang_id ke nama via /bidang
+  // ====================================
+  async function resolveCurrentJaksaBidang() {
+    // (1) storage langsung (kalau ada)
+    const fromStorageName =
+      localStorage.getItem("jaksaBidangNama") ||
+      localStorage.getItem("bidangNama") ||
+      "";
+
+    if (fromStorageName) {
+      currentJaksaBidangNama = normText(fromStorageName);
+      console.log("✅ bidang dari storage:", currentJaksaBidangNama);
+      return;
+    }
+
+    // (2) kadang disimpan sebagai string bidang
+    const fromStorageRaw =
+      localStorage.getItem("jaksaBidang") ||
+      localStorage.getItem("bidang") ||
+      "";
+    if (fromStorageRaw && isNaN(fromStorageRaw)) {
+      currentJaksaBidangNama = normText(fromStorageRaw);
+      console.log("✅ bidang (string) dari storage:", currentJaksaBidangNama);
+      return;
+    }
+
+    // (3) fallback: ambil dari API
+    const token = getToken();
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    // helper load bidang list -> map id->nama
+    const bidangMap = new Map();
+    async function loadBidangMap() {
+      try {
+        const res = await fetch(`${API_BASE}/bidang`, { headers });
+        const raw = await res.text();
+        let data;
+        try { data = JSON.parse(raw); } catch { data = []; }
+
+        if (!res.ok) {
+          console.warn("⚠️ GET /bidang gagal:", res.status, data);
+          return;
+        }
+
+        const normalized = (data && data.data !== undefined) ? data.data : data;
+        const list = Array.isArray(normalized)
+          ? normalized
+          : Array.isArray(normalized?.bidang) ? normalized.bidang
+          : Array.isArray(normalized?.data) ? normalized.data
+          : [];
+
+        list.forEach((b) => {
+          const id = b?._id || b?.id || b?.bidang_id;
+          const nama = b?.nama || b?.name || b?.nama_bidang || b?.bidang;
+          if (id && nama) bidangMap.set(String(id), String(nama));
+        });
+      } catch (e) {
+        console.warn("⚠️ error load bidang map:", e);
+      }
+    }
+
+    function bidangNameFromId(id) {
+      return bidangMap.get(String(id)) || "";
+    }
+
+    function getStoredJaksaId() {
+      return (
+        localStorage.getItem("jaksaId") ||
+        localStorage.getItem("userId") ||
+        localStorage.getItem("id") ||
+        localStorage.getItem("_id") ||
+        ""
+      );
+    }
+    function getStoredEmail() {
+      return (
+        localStorage.getItem("email") ||
+        localStorage.getItem("userEmail") ||
+        localStorage.getItem("jaksaEmail") ||
+        ""
+      );
+    }
+    function getStoredName() {
+      return (
+        localStorage.getItem("jaksaName") ||
+        localStorage.getItem("username") ||
+        localStorage.getItem("name") ||
+        ""
+      );
+    }
+
+    function pickJaksaFromList(list) {
+      const id = String(getStoredJaksaId() || "").trim();
+      const email = normText(getStoredEmail());
+      const name = normText(getStoredName());
+
+      if (id) {
+        const byId = list.find((j) => String(j?._id || j?.id || j?.jaksa_id || "") === id);
+        if (byId) return byId;
+      }
+      if (email) {
+        const byEmail = list.find((j) => normText(j?.email) === email);
+        if (byEmail) return byEmail;
+      }
+      if (name) {
+        const byName = list.find((j) => normText(j?.nama || j?.name || j?.username) === name);
+        if (byName) return byName;
+      }
+      if (list.length === 1) return list[0];
+      return null;
+    }
+
+    try {
+      await loadBidangMap();
+
+      const res = await fetch(`${API_BASE}/jaksa`, { headers });
+      const raw = await res.text();
+      let data;
+      try { data = JSON.parse(raw); } catch { data = []; }
+
+      if (!res.ok) {
+        console.warn("⚠️ GET /jaksa gagal:", res.status, data);
+        return;
+      }
+
+      const normalized = (data && data.data !== undefined) ? data.data : data;
+      const list = Array.isArray(normalized)
+        ? normalized
+        : Array.isArray(normalized?.jaksa) ? normalized.jaksa
+        : Array.isArray(normalized?.data) ? normalized.data
+        : [];
+
+      const me = pickJaksaFromList(list);
+      if (!me) return;
+
+      const bidang_id = me?.bidang_id || me?.bidang || "";
+      const bidangNama =
+        typeof bidang_id === "string"
+          ? (bidangNameFromId(bidang_id) || bidang_id)
+          : (bidang_id?.nama || bidang_id?.name || bidangNameFromId(bidang_id?._id || bidang_id?.id));
+
+      currentJaksaBidangNama = normText(bidangNama);
+      console.log("✅ bidang dari API:", currentJaksaBidangNama);
+
+      // simpan biar halaman lain gampang
+      if (bidangNama) localStorage.setItem("jaksaBidangNama", bidangNama);
+    } catch (e) {
+      console.warn("⚠️ resolve bidang error:", e);
+    }
   }
 
   // ====================================
@@ -120,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ====================================
   // Render tabel berdasarkan allQuestions
   // + filter & search
+  // + ✅ TAMBAHAN: filter bidang berdasarkan bidang jaksa login
   // ====================================
   function renderTable() {
     if (!tbody) return;
@@ -149,7 +345,13 @@ document.addEventListener("DOMContentLoaded", () => {
         isi.includes(keyword) ||
         kategori.includes(keyword);
 
-      return matchStatus && matchSearch;
+      // ✅ filter bidang jaksa (contoh: pembinaan hanya lihat pembinaan)
+      // kalau currentJaksaBidangNama kosong -> jangan filter (biar gak blank)
+      const matchBidang =
+        !currentJaksaBidangNama ||
+        normText(kategori) === currentJaksaBidangNama;
+
+      return matchStatus && matchSearch && matchBidang;
     });
 
     if (filtered.length === 0) {
@@ -553,6 +755,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ====================================
   // Initial load
+  // ✅ update urutan: resolve bidang dulu -> load pertanyaan -> render akan otomatis filter bidang
   // ====================================
-  loadPertanyaan();
+  (async () => {
+    await resolveCurrentJaksaBidang();
+    loadPertanyaan();
+  })();
 });

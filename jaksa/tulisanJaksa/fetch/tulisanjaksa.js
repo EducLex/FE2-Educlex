@@ -9,6 +9,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputTanggal = document.getElementById("tanggal");
   const tbody = document.getElementById("tabelTulisanBody");
 
+  // ✅ tambahan: klik profile di header
+  const openProfileEl = document.getElementById("openProfileJaksa");
+  if (openProfileEl) {
+    openProfileEl.addEventListener("click", () => {
+      // pakai path profile yang kamu pakai sebelumnya
+      window.location.href = "/jaksa/profilejaksa/pfjaksa.html";
+    });
+  }
+
+  // ✅ tambahan: set nama di header bila ada
+  (function setHeaderName() {
+    const jaksaNameEl = document.getElementById("jaksaName");
+    const storedName =
+      localStorage.getItem("jaksaName") ||
+      localStorage.getItem("username") ||
+      localStorage.getItem("name");
+    if (jaksaNameEl && storedName) jaksaNameEl.textContent = storedName;
+  })();
+
   // dropdown bidang (wajib ada di HTML). Kalau belum ada, script ini auto-inject.
   const findBidangSelect = () =>
     document.querySelector(
@@ -62,7 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ==========================
-  // Ensure dropdown bidang ada
+  // ✅ FIX: Ensure dropdown bidang ada
+  // Masalah kamu: dulu dropdown di-insert sebelum inputTanggal (input),
+  // akibatnya label "Tanggal Publikasi" bisa keangkat/nyelip.
+  // SOLUSI: insert sebelum FORM-GROUP tanggal, bukan sebelum inputnya.
+  // Dan wrapper dibuat .form-group supaya layout konsisten.
   // ==========================
   function ensureBidangSelect() {
     selectBidang = findBidangSelect();
@@ -70,34 +93,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Inject dropdown jika HTML belum ada
     const wrapper = document.createElement("div");
-    wrapper.style.margin = "10px 0";
+    wrapper.className = "form-group"; // ✅ biar sama kaya field lain
 
     const label = document.createElement("label");
     label.textContent = "Bidang (Instansi)";
     label.setAttribute("for", "bidangId");
-    label.style.display = "block";
-    label.style.marginBottom = "6px";
-    label.style.fontWeight = "700";
-    label.style.color = "#4e342e";
 
     const select = document.createElement("select");
     select.id = "bidangId";
     select.name = "bidang_id";
     select.dataset.role = "bidang";
-    select.style.width = "100%";
-    select.style.padding = "10px 12px";
-    select.style.borderRadius = "10px";
-    select.style.border = "1px solid #d7ccc8";
-    select.style.fontFamily = "Poppins, sans-serif";
 
     wrapper.appendChild(label);
     wrapper.appendChild(select);
 
-    // taruh sebelum tanggal (kalau ada)
-    if (inputTanggal && inputTanggal.parentElement) {
-      inputTanggal.parentElement.insertBefore(wrapper, inputTanggal);
+    // ✅ target: sisipkan sebelum form-group tanggal
+    const tanggalGroup =
+      (inputTanggal && inputTanggal.closest(".form-group")) || null;
+
+    if (tanggalGroup && tanggalGroup.parentElement) {
+      tanggalGroup.parentElement.insertBefore(wrapper, tanggalGroup);
     } else if (formTulisan) {
-      formTulisan.insertBefore(wrapper, formTulisan.firstChild);
+      // fallback: taruh di atas tombol submit (lebih aman daripada firstChild)
+      const submitBtn = formTulisan.querySelector("button[type='submit']");
+      if (submitBtn && submitBtn.parentElement) {
+        formTulisan.insertBefore(wrapper, submitBtn);
+      } else {
+        formTulisan.insertBefore(wrapper, formTulisan.firstChild);
+      }
     } else {
       document.body.appendChild(wrapper);
     }

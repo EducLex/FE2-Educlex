@@ -33,9 +33,19 @@
   <!-- Header -->
   <header class="admin-header">
     <div class="logo">EducLex</div>
+
+    <!-- ✅ update: ikon+nama jadi tombol clickable -->
     <div class="user-info">
-      <i class="fas fa-user-tie"></i>
-      <span id="jaksaName">Jaksa</span>
+      <button
+        id="openProfileJaksa"
+        type="button"
+        style="background: transparent; border: none; padding: 0; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font: inherit; color: inherit;"
+        aria-label="Buka Profil Jaksa"
+      >
+        <i class="fas fa-user-tie"></i>
+        <span id="jaksaName">Jaksa</span>
+      </button>
+
       <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
   </header>

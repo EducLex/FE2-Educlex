@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial suggestscale=1.0" />
   <title>EducLex - Tanya Jaksa</title>
 
   <!-- Font & Style -->
@@ -26,9 +26,19 @@
   <!-- Header -->
   <header class="admin-header">
     <div class="logo">EducLex</div>
+
+    <!-- ✅ update: ikon+nama jaksa jadi tombol yang bisa diklik -->
     <div class="user-info">
-      <i class="fas fa-user-tie"></i>
-      <span id="jaksaName">Jaksa</span>
+      <button
+        id="openProfileJaksa"
+        type="button"
+        style="background: transparent; border: none; padding: 0; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font: inherit; color: inherit;"
+        aria-label="Buka Profil Jaksa"
+      >
+        <i class="fas fa-user-tie"></i>
+        <span id="jaksaName">Jaksa</span>
+      </button>
+
       <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
   </header>

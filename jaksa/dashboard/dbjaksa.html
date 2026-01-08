@@ -33,10 +33,20 @@
     <!-- Header -->
     <header class="admin-header">
       <div class="logo">EducLex</div>
+
+      <!-- ✅ user-info dipecah: tombol profil + tombol logout -->
       <div class="user-info">
-        <i class="fas fa-user-tie"></i>
-        <span id="jaksaName">Jaksa</span>
-        <button id="logoutBtn" class="logout-btn">Logout</button>
+        <button
+          id="openProfileJaksa"
+          type="button"
+          style="background: transparent; border: none; padding: 0; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font: inherit; color: inherit;"
+          aria-label="Buka Profil Jaksa"
+        >
+          <i class="fas fa-user-tie"></i>
+          <span id="jaksaName">Jaksa</span>
+        </button>
+
+        <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
       </div>
     </header>
 
@@ -86,23 +96,22 @@
           </div>
         </div>
 
-
         <!-- Tabel Tulisan Jaksa -->
         <section class="data-section">
-  <h2>Daftar Tulisan Jaksa</h2>
-  <table class="data-table" id="tulisanTable">
-    <thead>
-      <tr>
-        <th>Judul</th>
-        <th>Penulis</th>
-        <th>Tanggal</th>
-      </tr>
-    </thead>
-    <tbody id="tulisanTableBody">
-      <!-- Data akan diisi oleh JavaScript -->
-    </tbody>
-  </table>
-</section>
+          <h2>Daftar Tulisan Jaksa</h2>
+          <table class="data-table" id="tulisanTable">
+            <thead>
+              <tr>
+                <th>Judul</th>
+                <th>Penulis</th>
+                <th>Tanggal</th>
+              </tr>
+            </thead>
+            <tbody id="tulisanTableBody">
+              <!-- Data akan diisi oleh JavaScript -->
+            </tbody>
+          </table>
+        </section>
       </main>
     </div>
 

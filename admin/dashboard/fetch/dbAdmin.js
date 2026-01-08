@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // ✅ Endpoint user yang TERBUKTI ada dari screenshot kamu
   const USERS_URL = `${API_BASE}/users`;
 
+  // ✅ Tambahan: endpoint jaksa (buat total jaksa yang bener)
+  const JAKSA_URL = `${API_BASE}/jaksa`;
+
   /**
    * Flag probing endpoint lain.
    * - false = NO ERROR CONSOLE (tidak coba endpoint 404)
@@ -34,6 +37,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Tabel pengguna
   const userTableBody = document.getElementById("userTableBody");
+
+  // =========================================================
+  // ✅ Anti double-init (kadang file ke-include 2x)
+  // =========================================================
+  if (window.__DBADMIN_BOOTED__) {
+    console.warn("⚠️ dbadmin.js sudah jalan (skip double-boot).");
+    return;
+  }
+  window.__DBADMIN_BOOTED__ = true;
+
+  // =========================================================
+  // ✅ Simple fetch cache biar gak race-condition
+  // =========================================================
+  const __fetchCache = new Map(); // url -> Promise<{ok,status,data}>
+  async function cachedSafeFetch(url, options) {
+    const key = `${url}::${options?.method || "GET"}`;
+    if (__fetchCache.has(key)) return __fetchCache.get(key);
+
+    const p = (async () => {
+      try {
+        const res = await fetch(url, options);
+        const data = await readJsonSafe(res);
+        return { ok: res.ok, status: res.status, data, res };
+      } catch {
+        return { ok: false, status: 0, data: { error: "Failed to fetch" }, res: null };
+      }
+    })();
+
+    __fetchCache.set(key, p);
+    return p;
+  }
 
   // ============================
   // Helper umum
@@ -110,9 +144,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ============================
+  // =========================================================
+  // ✅ Helper normalize list (users/jaksa)
+  // =========================================================
+  function normalizeList(data, possibleKeys = []) {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") {
+      if (Array.isArray(data.data)) return data.data;
+      for (const k of possibleKeys) {
+        if (Array.isArray(data[k])) return data[k];
+      }
+    }
+    return [];
+  }
+
+  // =========================================================
+  // ✅ Hitung jaksa dari list /users (fallback)
+  // =========================================================
+  function countJaksaFromUsers(list) {
+    if (!Array.isArray(list)) return 0;
+
+    return list.filter((u) => {
+      const role = pickField(u, ["role", "jabatan", "tipe"], "").toLowerCase().trim();
+      // beberapa backend bisa pakai "prosecutor"
+      return role === "jaksa" || role === "prosecutor";
+    }).length;
+  }
+
+  // =========================================================
+  // ✅ Hitung jaksa dari endpoint /jaksa (source of truth)
+  // =========================================================
+  async function fetchJaksaCount() {
+    const token = getTokenOrRedirect();
+    if (!token) return 0;
+
+    const resp = await cachedSafeFetch(JAKSA_URL, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: token,
+      },
+    });
+
+    if (!resp.ok) {
+      console.warn("⚠️ GET /jaksa gagal untuk hitung totalJaksa:", resp.status, resp.data);
+      return 0;
+    }
+
+    // response bisa: array, {data:[...]}, {jaksa:[...]}
+    const list = normalizeList(resp.data, ["jaksa", "prosecutors", "items", "results"]);
+    return list.length;
+  }
+
+  // =========================================================
   // Render statistik
-  // ============================
+  // =========================================================
   function renderStats(data) {
     const totalArtikel = pickCount(data, [
       "total_artikel",
@@ -145,6 +231,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (totalArtikelEl) totalArtikelEl.textContent = totalArtikel;
     if (totalPeraturanEl) totalPeraturanEl.textContent = totalPeraturan;
     if (totalUserEl) totalUserEl.textContent = totalUser;
+
+    // ✅ jangan langsung percaya totalJaksa dari dashboard kalau 0
+    // biar nanti bisa ditimpa hasil dari /jaksa (lebih bener)
     if (totalJaksaEl) totalJaksaEl.textContent = totalJaksa;
   }
 
@@ -191,6 +280,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     await Swal.fire("Berhasil", resp.data?.message || "Role pengguna berhasil diperbarui.", "success");
     loadUsers(); // refresh tabel + total jaksa
+    // ✅ refresh totalJaksa dari /jaksa biar update role langsung kebaca (kalau backend juga sync)
+    refreshJaksaCountBestEffort();
   }
 
   // ============================
@@ -207,17 +298,18 @@ document.addEventListener("DOMContentLoaded", () => {
           </td>
         </tr>
       `;
+
+      // ✅ ini hanya fallback; nanti bisa ditimpa dari /jaksa
       if (totalJaksaEl) totalJaksaEl.textContent = "0";
       return;
     }
 
     const allowedRoles = ["user", "jaksa", "admin"];
 
-    // hitung role jaksa
-    const jaksaCount = list.filter((u) => {
-      const role = pickField(u, ["role", "jabatan", "tipe"], "").toLowerCase().trim();
-      return role === "jaksa";
-    }).length;
+    // hitung role jaksa dari /users (fallback)
+    const jaksaCount = countJaksaFromUsers(list);
+
+    // ✅ set dulu fallback, nanti kita timpa dengan /jaksa (source of truth)
     if (totalJaksaEl) totalJaksaEl.textContent = String(jaksaCount);
 
     userTableBody.innerHTML = list
@@ -280,6 +372,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // =========================================================
+  // ✅ Refresh totalJaksa pakai sumber terbaik
+  // - dashboard kadang 0 → timpa pakai /jaksa
+  // =========================================================
+  async function refreshJaksaCountBestEffort() {
+    try {
+      const countFromJaksa = await fetchJaksaCount();
+      if (countFromJaksa > 0) {
+        if (totalJaksaEl) totalJaksaEl.textContent = String(countFromJaksa);
+        return;
+      }
+
+      // kalau /jaksa gagal (0), minimal jangan blank: biarin fallback dari /users yang sudah di-set renderUsers()
+      // tapi kalau totalJaksa masih 0 juga, ya tetap 0 (berarti beneran kosong / akses ditolak).
+    } catch (e) {
+      console.warn("⚠️ refreshJaksaCountBestEffort error:", e);
+    }
+  }
+
   // ============================
   // Fetch dashboard (statistik)
   // ============================
@@ -287,7 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const token = getTokenOrRedirect();
     if (!token) return;
 
-    const resp = await safeFetch(DASHBOARD_URL, {
+    const resp = await cachedSafeFetch(DASHBOARD_URL, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -317,10 +428,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const payload = extractPayload(resp.data);
-    // (opsional) kalau kamu gak mau log sama sekali, comment baris ini:
-    // console.log("✅ Dashboard payload:", payload);
-
     renderStats(payload);
+
+    // ✅ setelah render stats, pastikan total jaksa bener
+    refreshJaksaCountBestEffort();
   }
 
   // ============================
@@ -342,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==== MODE AMAN: pakai endpoint yang sudah pasti ada ====
     if (!ENABLE_ENDPOINT_PROBING) {
-      const resp = await safeFetch(USERS_URL, {
+      const resp = await cachedSafeFetch(USERS_URL, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -365,6 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         Swal.fire("Gagal memuat user", resp.data?.error || resp.data?.message || "Server error.", "error");
         renderUsers([]);
+        // ✅ tetap coba hitung jaksa dari /jaksa walau /users gagal
+        refreshJaksaCountBestEffort();
         return;
       }
 
@@ -376,6 +489,9 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (Array.isArray(data.users)) list = data.users;
 
       renderUsers(list);
+
+      // ✅ override totalJaksa pakai /jaksa
+      refreshJaksaCountBestEffort();
       return;
     }
 
@@ -406,13 +522,14 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (Array.isArray(data.users)) list = data.users;
 
       if (list.length > 0) {
-        // console.log("✅ User list loaded from:", path, list);
         renderUsers(list);
+        refreshJaksaCountBestEffort();
         return;
       }
     }
 
     renderUsers([]);
+    refreshJaksaCountBestEffort();
   }
 
   // ============================

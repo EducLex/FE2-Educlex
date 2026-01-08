@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EducLex - Profil Jaksa</title>
+
+    <!-- Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS dashboard (layout konsisten) -->
+    <link rel="stylesheet" href="/assets/style/jaksa/dbjaksa.css" />
+    <!-- CSS khusus profil -->
+    <link rel="stylesheet" href="/assets/style/jaksa/pfjaksa.css" />
+
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
+      type="image/png"
+    />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="logo">EducLex</div>
+
+      <!-- PROFIL TRIGGER (klik ini harus masuk profil) -->
+      <button class="user-pill" id="openProfileJaksa" type="button" aria-label="Buka profil jaksa">
+        <i class="fas fa-user-tie"></i>
+        <span id="jaksaName">Jaksa</span>
+      </button>
+
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </header>
+
+    <!-- Layout -->
+    <div class="admin-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <ul>
+          <li>
+            <a href="/jaksa/dashboard/dbjaksa.html">
+              <i class="fas fa-tachometer-alt"></i>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/jaksa/tanyaJaksa/tanyajaksa.html">
+              <i class="fas fa-comments"></i>
+              Tanya Jaksa
+            </a>
+          </li>
+          <li>
+            <a href="/jaksa/tulisanJaksa/tulisanjaksa.html">
+              <i class="fas fa-pen"></i>
+              Tulisan Jaksa
+            </a>
+          </li>
+          <li>
+            <a href="/jaksa/profilejaksa/pfjaksa.html" class="active">
+              <i class="fas fa-id-badge"></i>
+              Profil Jaksa
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <h1>Profil Jaksa</h1>
+
+        <section class="pf-wrap">
+          <div class="pf-card" id="pfCard">
+            <div class="pf-top">
+              <div class="pf-avatar" aria-hidden="true">
+                <i class="fas fa-user-tie"></i>
+              </div>
+
+              <div class="pf-identity">
+                <div class="pf-name" id="pfNama">Memuat...</div>
+                <div class="pf-sub" id="pfBidang">Bidang: -</div>
+              </div>
+
+              <div class="pf-actions">
+                <button type="button" class="pf-btn pf-btn-ghost" id="backBtn">
+                  <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+              </div>
+            </div>
+
+            <div class="pf-info">
+              <div class="pf-row">
+                <div class="pf-label">Nama</div>
+                <div class="pf-value" id="pfNamaDetail">-</div>
+              </div>
+
+              <div class="pf-row">
+                <div class="pf-label">NIP</div>
+                <div class="pf-value" id="pfNip">-</div>
+              </div>
+
+              <div class="pf-row">
+                <div class="pf-label">Email</div>
+                <div class="pf-value" id="pfEmail">-</div>
+              </div>
+
+              <div class="pf-row">
+                <div class="pf-label">Bidang</div>
+                <div class="pf-value" id="pfBidangDetail">-</div>
+              </div>
+            </div>
+
+            <div class="pf-meta" id="metaHint">Memuat profil...</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="admin-footer">
+      <p>© 2025 EducLex | Profil Jaksa</p>
+    </footer>
+
+    <script src="/jaksa/profilejaksa/fetch/pfjaksa.js"></script>
+    <script src="/auth/fetch/logout.js"></script>
+  </body>
+</html>

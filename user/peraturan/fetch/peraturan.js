@@ -86,6 +86,23 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(v ?? "").trim();
   }
 
+  // ✅ NEW: Escape HTML biar aman dari XSS (judul/isi/kategori dari backend)
+  function escapeHtml(input) {
+    const s = String(input ?? "");
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // ✅ NEW: Escape attribute (mis. url di style)
+  function escapeHtmlAttr(input) {
+    // minimal amanin kutip + karakter berbahaya
+    return escapeHtml(input).replace(/`/g, "&#96;");
+  }
+
   // ✅ NEW: normalisasi value internal/eksternal dari string apapun
   function normalizeJenisValue(v) {
     const s = String(v ?? "").toLowerCase().trim();
@@ -522,9 +539,20 @@ document.addEventListener("DOMContentLoaded", () => {
       docCandidatesByIndex.set(idx, buildDocCandidates(raw));
     });
 
+    const safePdfIcon = escapeHtmlAttr(PDF_ICON_URL);
+
     const cardsHtml = list
       .map((p, index) => {
-        const bodyHtmlText = p.isiParts.map((par) => `<p>${par}</p>`).join("");
+        // ✅ NEW: escape semua text sebelum masuk ke innerHTML
+        const safeKategori = escapeHtml(p.kategori);
+        const safeJudul = escapeHtml(p.judul);
+        const safeTanggal = escapeHtml(p.tanggalFormatted);
+        const safeExcerpt = escapeHtml(p.excerpt);
+
+        const bodyHtmlText = (p.isiParts || [])
+          .map((par) => `<p>${escapeHtml(par)}</p>`)
+          .join("");
+
         const hasDoc = !!p.dokumenRaw;
 
         const docHtml = hasDoc
@@ -549,7 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="pdf-icon-box"
                    style="
                     width: 120px; height: 150px; margin: 0 auto 16px;
-                    background-image: url('${PDF_ICON_URL}');
+                    background-image: url('${safePdfIcon}');
                     background-size: contain; background-position: center; background-repeat: no-repeat;">
               </div>`
                 : ""
@@ -557,18 +585,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="artikel-body">
               <div class="artikel-header-box">
-                <p class="artikel-kategori">${p.kategori}</p>
-                <h3 class="artikel-title">${p.judul}</h3>
+                <p class="artikel-kategori">${safeKategori}</p>
+                <h3 class="artikel-title">${safeJudul}</h3>
                 <p class="artikel-meta">
                   <span>Peraturan Hukum</span>
                   <span style="margin:0 6px;">•</span>
-                  <span>${p.tanggalFormatted}</span>
+                  <span>${safeTanggal}</span>
                 </p>
               </div>
 
               <hr class="artikel-separator" />
 
-              <p class="artikel-excerpt">${p.excerpt}</p>
+              <p class="artikel-excerpt">${safeExcerpt}</p>
 
               ${docHtml}
 
