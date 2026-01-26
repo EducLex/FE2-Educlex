@@ -81,6 +81,58 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ==========================
+  // ✅ Word limit (Isi Tulisan) — maksimal 25 kata
+  // ==========================
+  const MAX_ISI_WORDS = 25;
+
+  const wordCount = (text) => {
+    const cleaned = String(text || "").trim();
+    if (!cleaned) return 0;
+    return cleaned.split(/\s+/).filter(Boolean).length;
+  };
+
+  const clampToMaxWords = (text, maxWords = MAX_ISI_WORDS) => {
+    const cleaned = String(text || "").trim();
+    if (!cleaned) return "";
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    if (words.length <= maxWords) return text; // keep original feel when possible
+    return words.slice(0, maxWords).join(" ") + " ";
+  };
+
+  const updateIsiCounter = () => {
+    const countEl = document.getElementById("isiWordCount");
+    const hintEl = document.getElementById("isiWordHint");
+    if (!inputIsi) return;
+
+    const c = wordCount(inputIsi.value);
+
+    if (countEl) countEl.textContent = String(c);
+
+    if (hintEl) {
+      if (c > MAX_ISI_WORDS) {
+        hintEl.textContent = `Kelebihan ${c - MAX_ISI_WORDS} kata (akan dipotong)`;
+      } else {
+        hintEl.textContent = `Sisa ${MAX_ISI_WORDS - c} kata`;
+      }
+    }
+  };
+
+  // ✅ live enforcement: kalau lewat 25 kata, otomatis dipotong
+  if (inputIsi) {
+    inputIsi.addEventListener("input", () => {
+      const c = wordCount(inputIsi.value);
+      if (c > MAX_ISI_WORDS) {
+        const before = inputIsi.value;
+        inputIsi.value = clampToMaxWords(before, MAX_ISI_WORDS);
+      }
+      updateIsiCounter();
+    });
+
+    // initial counter render
+    updateIsiCounter();
+  }
+
+  // ==========================
   // ✅ FIX: Ensure dropdown bidang ada
   // Masalah kamu: dulu dropdown di-insert sebelum inputTanggal (input),
   // akibatnya label "Tanggal Publikasi" bisa keangkat/nyelip.
@@ -327,6 +379,9 @@ document.addEventListener("DOMContentLoaded", () => {
           inputTanggal.value = toDateInput(tanggal) || new Date().toISOString().split("T")[0];
         }
 
+        // ✅ update counter saat mode edit
+        updateIsiCounter();
+
         ensureBidangSelect();
         if (selectBidang && bidangId && selectBidang.querySelector(`option[value="${bidangId}"]`)) {
           selectBidang.value = bidangId;
@@ -439,6 +494,24 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // ✅ Validasi max 25 kata untuk isi tulisan (quotes)
+    const isiWords = wordCount(isi);
+    if (isiWords > MAX_ISI_WORDS) {
+      Swal.fire({
+        icon: "warning",
+        title: "Terlalu panjang",
+        text: `Isi tulisan maksimal ${MAX_ISI_WORDS} kata. Sekarang: ${isiWords} kata.`,
+        confirmButtonColor: "#6D4C41",
+      });
+
+      // rapihin isi otomatis biar user gak pusing
+      if (inputIsi) {
+        inputIsi.value = clampToMaxWords(inputIsi.value, MAX_ISI_WORDS);
+        updateIsiCounter();
+      }
+      return;
+    }
+
     const bidang_id = resolveBidangId();
     const bidangText = (selectBidang?.selectedOptions?.[0]?.textContent || "").trim();
 
@@ -515,6 +588,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (formTulisan) formTulisan.reset();
       if (inputTanggal) inputTanggal.value = new Date().toISOString().split("T")[0];
       if (selectBidang) selectBidang.value = bidangList[0]?._id || "";
+
+      // ✅ reset counter setelah form reset
+      updateIsiCounter();
 
       loadTulisan();
     } catch (err) {

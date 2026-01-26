@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allTulisan = [];
 
+  // ✅ simpan list yang sedang dirender, biar tombol "read more" tinggal panggil index
+  let currentRenderedList = [];
+
   // 8 bidang yang harus tampil di dropdown publik
   const FIXED_8_BIDANG = [
     "Pembinaan",
@@ -45,6 +48,55 @@ document.addEventListener("DOMContentLoaded", () => {
         ${html}
       </div>
     `;
+  }
+
+  // ✅ escape html biar aman masuk ke Swal (anti XSS + anti layout rusak)
+  function escapeHTML(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // ✅ popup detail tulisan
+  function openTulisanPopup(t) {
+    const tanggalFormatted = t.tanggal
+      ? new Date(t.tanggal).toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })
+      : "";
+
+    const metaParts = [];
+    if (t.penulis) metaParts.push(`✍️ ${escapeHTML(t.penulis)}`);
+    if (t.bidang) metaParts.push(`🏷️ ${escapeHTML(t.bidang)}`);
+    if (tanggalFormatted) metaParts.push(`📅 ${escapeHTML(tanggalFormatted)}`);
+
+    const metaLine = metaParts.join(" • ");
+
+    const isiSafe = escapeHTML(t.isi || "");
+
+    if (typeof Swal === "undefined") {
+      alert(`${t.judul}\n\n${t.isi}`);
+      return;
+    }
+
+    Swal.fire({
+      title: escapeHTML(t.judul || "Detail Tulisan"),
+      html: `
+        <div class="swal-tulisan-wrap">
+          ${metaLine ? `<div class="swal-tulisan-meta">${metaLine}</div>` : ""}
+          <div class="swal-tulisan-isi">${isiSafe}</div>
+        </div>
+      `,
+      confirmButtonText: "Tutup",
+      width: "min(820px, 92vw)",
+      showCloseButton: true,
+      focusConfirm: false,
+    });
   }
 
   // ==========================
@@ -166,6 +218,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return (t.bidang || "").toLowerCase() === selectedBidang.toLowerCase();
     });
 
+    // ✅ simpan untuk handler readmore
+    currentRenderedList = filtered;
+
     if (filtered.length === 0) {
       setGridMessage(`
         <div class="loading-card" style="color:#6d4c41;">
@@ -176,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     grid.innerHTML = filtered
-      .map((t) => {
+      .map((t, idx) => {
         const tanggalFormatted = t.tanggal
           ? new Date(t.tanggal).toLocaleDateString("id-ID", {
               day: "2-digit",
@@ -185,28 +240,60 @@ document.addEventListener("DOMContentLoaded", () => {
             })
           : "";
 
-        const preview = t.isi.length > 240 ? t.isi.slice(0, 240) + "..." : t.isi;
+        const isLong = (t.isi || "").length > 240;
+        const preview = isLong ? t.isi.slice(0, 240) + "..." : t.isi;
 
-        // ✅ meta kiri/kanan biar tanggal bisa nempel ujung kanan lewat CSS
+        // ✅ bidang kecil di samping judul
+        const bidangMini = (t.bidang || "").trim()
+          ? `<span class="tulisan-bidang-mini">🏷️ ${escapeHTML(t.bidang)}</span>`
+          : `<span class="tulisan-bidang-mini" style="opacity:.65;">🏷️ -</span>`;
+
         return `
           <article class="tulisan-card">
-            <h3 class="judul-tulisan">${t.judul}</h3>
+            <div class="tulisan-title-row">
+              <h3 class="judul-tulisan">${escapeHTML(t.judul)}</h3>
+              ${bidangMini}
+            </div>
 
             <div class="tulisan-meta">
               <div class="meta-left">
-                <span class="penulis">✍️ ${t.penulis}</span>
+                <span class="penulis">✍️ ${escapeHTML(t.penulis)}</span>
               </div>
 
               <div class="meta-right">
-                ${tanggalFormatted ? `<span class="tanggal">📅 ${tanggalFormatted}</span>` : ""}
+                ${tanggalFormatted ? `<span class="tanggal">📅 ${escapeHTML(tanggalFormatted)}</span>` : ""}
               </div>
             </div>
 
-            <p class="tulisan-snippet">${preview}</p>
+            <p class="tulisan-snippet ${isLong ? "is-truncated" : ""}">
+              ${escapeHTML(preview)}
+            </p>
+
+            ${
+              isLong
+                ? `<button class="btn-readmore" type="button" data-idx="${idx}">Baca selengkapnya</button>`
+                : ""
+            }
           </article>
         `;
       })
       .join("");
+  }
+
+  // ✅ Event delegation: klik tombol baca selengkapnya
+  if (grid) {
+    grid.addEventListener("click", (e) => {
+      const btn = e.target?.closest?.(".btn-readmore");
+      if (!btn) return;
+
+      const idx = Number(btn.getAttribute("data-idx"));
+      if (!Number.isFinite(idx)) return;
+
+      const t = currentRenderedList[idx];
+      if (!t) return;
+
+      openTulisanPopup(t);
+    });
   }
 
   // ==========================

@@ -97,6 +97,69 @@
     </div>
   </section>
 
+  <!-- ✅ NEW: Kisi-kisi Tanya Jaksa (tanpa hapus section lain) -->
+  <section class="section section-kisikisi" id="kisiKisi">
+    <h2>Kisi-kisi Tanya Jaksa (Biar Nggak Bingung)</h2>
+    <p class="subtitle">
+      Pilih bidang yang paling nyambung sama kasusmu. Di bawah ini ada contoh tipe pertanyaan biar kamu punya gambaran.
+    </p>
+
+    <div class="kisi-layout">
+      <!-- Grid bidang -->
+      <div class="kisi-grid" id="kisiGrid" aria-live="polite">
+        <!-- Diisi via script.js -->
+      </div>
+
+      <!-- Panel detail -->
+      <aside class="kisi-detail" id="kisiDetail" aria-live="polite">
+        <div class="kisi-detail-inner">
+          <div class="kisi-detail-header">
+            <div>
+              <div class="kisi-detail-title" id="kisiTitle">Pilih salah satu bidang</div>
+              <div class="kisi-detail-badge" id="kisiBadge">8 Bidang Kejaksaan</div>
+            </div>
+            <button class="kisi-reset" id="kisiReset" type="button" aria-label="Reset pilihan">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+
+          <p class="kisi-detail-desc" id="kisiDesc">
+            Klik kartu bidang di samping buat lihat penjelasan singkat + contoh pertanyaan yang cocok.
+          </p>
+
+          <div class="kisi-topics">
+            <div class="kisi-topics-title">Contoh topik yang cocok</div>
+            <ul class="kisi-topics-list" id="kisiTopics">
+              <li>Contoh: “Aku kena bully online, itu masuk ranah apa?”</li>
+              <li>Contoh: “Kalau jadi saksi, hakku apa aja?”</li>
+              <li>Contoh: “Boleh gak sebar foto orang tanpa izin?”</li>
+            </ul>
+          </div>
+
+          <div class="kisi-q">
+            <div class="kisi-q-title">Contoh pertanyaan siap pakai</div>
+            <div class="kisi-q-wrap" id="kisiQuestions">
+              <div class="kisi-q-item">Pilih bidang dulu ya 🙂</div>
+            </div>
+          </div>
+
+          <div class="kisi-actions">
+            <a class="kisi-btn kisi-btn-primary" href="/user/tanyajaksa/tanya.html">
+              <i class="fa-solid fa-paper-plane"></i> Tanya sekarang
+            </a>
+            <button class="kisi-btn kisi-btn-ghost" id="kisiCopy" type="button">
+              <i class="fa-regular fa-copy"></i> Salin contoh pertanyaan
+            </button>
+          </div>
+
+          <div class="kisi-note" id="kisiNote">
+            Tips: Jelasin kronologi singkat (apa, kapan, di mana), dan sebutkan siapa yang terlibat (tanpa sebar data sensitif).
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer style="background-color:#5d4037; color:white; padding:40px 0; font-family:'Poppins', sans-serif;">
     <div style="max-width:1200px; margin:auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:40px; text-align:center;">

@@ -1,4 +1,4 @@
-/* =========================================
+ /* =========================================
    GLOBAL SETTINGS
 ========================================= */
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -231,7 +231,7 @@ body {
 }
 
 /* =========================================
-   CARD — desain awal kamu, tapi dipertegas sekatnya
+   CARD — desain awal kamu indikasi
 ========================================= */
 .tulisan-card {
   background: #fff;
@@ -248,35 +248,60 @@ body {
   box-shadow: 0 12px 24px rgba(0,0,0,0.10);
 }
 
-/* JUDUL */
+/* =========================================================
+   ✅ NEW: Judul + bidang kecil di samping
+========================================================= */
+.tulisan-title-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 2px solid rgba(109, 76, 65, 0.14);
+}
+
 .judul-tulisan {
   font-size: 1.15rem;
   font-weight: 800;
   color: #4e342e;
-  margin-bottom: 10px;
   line-height: 1.35;
-  padding-bottom: 10px;
-  border-bottom: 2px solid rgba(109, 76, 65, 0.14); /* sekat tegas judul */
+  margin: 0; /* biar ga tabrakan */
 }
 
-/* META: penulis + tanggal + (kalau ada) bidang */
+.tulisan-bidang-mini{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(141, 110, 99, 0.12);
+  border: 1px solid rgba(141, 110, 99, 0.20);
+  color:#6d4c41;
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* kalau judul kepanjangan, jangan dorong bidang turun chaos */
+@media (max-width: 520px){
+  .tulisan-title-row{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tulisan-bidang-mini{
+    margin-top: 6px;
+  }
+}
+
+/* META: penulis + tanggal */
 .tulisan-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   margin-bottom: 12px;
-}
-
-/* badge yang cantik (buat bidang kalau tulisan.js kamu masukkan) */
-.tulisan-badge {
-  background: #f9f3ef;
-  border: 1px solid rgba(109, 76, 65, 0.18);
-  color: #6d4c41;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 0.8rem;
 }
 
 /* penulis & tanggal */
@@ -298,14 +323,6 @@ body {
   gap: 6px;
 }
 
-/* SEKAT kecil di antara meta item (optional visual) */
-.meta-sep {
-  width: 6px;
-  height: 6px;
-  background: rgba(109, 76, 65, 0.35);
-  border-radius: 999px;
-}
-
 /* ISI */
 .tulisan-snippet {
   background: #fbf4ee;
@@ -322,7 +339,7 @@ body {
   overflow: hidden;
 }
 
-/* Button */
+/* Button group (masih ada walau gak dipakai semua) */
 .btn-group {
   display: flex;
   gap: 10px;
@@ -469,8 +486,6 @@ footer p:last-child {
   }
 }
 
-
-
 /* =========================================
    CARD — SEKAT JELAS (override)
 ========================================= */
@@ -489,124 +504,27 @@ footer p:last-child {
   box-shadow:0 12px 24px rgba(0,0,0,0.10);
 }
 
-/* Judul: kasih garis pembatas bawah */
-.tulisan-card .judul-tulisan,
-.tulisan-card .tulisan-title{
-  font-size:1.15rem;
-  font-weight:800;
-  color:#4e342e;
-  line-height:1.35;
-
-  padding-bottom:10px;
-  margin-bottom:10px;
-  border-bottom:2px solid rgba(109, 76, 65, 0.16);
-}
-
-/* Meta: penulis + tanggal, kasih dashed separator */
-.tulisan-card .tulisan-meta{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-
-  padding-bottom:10px;
-  margin-bottom:12px;
-  border-bottom:1px dashed rgba(109, 76, 65, 0.28);
-}
-
-/* Kalau tulisan.js kamu TIDAK membungkus meta di .tulisan-meta,
-   kita pakai trik: penulis/tanggal dibuat inline-block dan garis pemisah muncul lewat pseudo-element */
-.tulisan-card .penulis,
-.tulisan-card .tanggal{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-
-  font-size:0.9rem;
-  font-weight:800;
-  color:#6d4c41;
-}
-
-/* Jika penulis+tanggal tidak dibungkus .tulisan-meta,
-   tambahkan garis pemisah setelah tanggal (jadi meta punya "sekat" secara visual) */
-.tulisan-card .tanggal::after{
-  content:"";
-  display:block;
-  width:100%;
-  height:0;
-  border-bottom:1px dashed rgba(109, 76, 65, 0.28);
-  margin-top:10px;
-}
-
-/* Isi: jadi blok tersendiri biar gak nyampur */
-.tulisan-card .tulisan-snippet,
-.tulisan-card .isi-tulisan,
-.tulisan-card p:last-of-type{
-  background:#fbf4ee;
-  border:1px solid rgba(109, 76, 65, 0.14);
-  border-radius:12px;
-  padding:12px;
-
-  color:#3f3f3f;
-  font-size:0.96rem;
-  line-height:1.7;
-
-  margin-top:12px;
-
-  /* clamp biar rapi */
-  display:-webkit-box;
-  -webkit-line-clamp:4;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
+/* Meta: tetap kiri/kanan */
 .tulisan-meta{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-}
-
-.meta-left, .meta-right{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-/* biar tanggal bener-bener ke kanan */
-.meta-right{
-  margin-left:auto;
-}
-
-
-/* HAPUS garis putus-putus di area meta (penulis + tanggal) */
-.tulisan-meta{
-  border-bottom: none !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 12px; /* tetap kasih jarak biar rapi */
-}
-
-/* Kalau kamu masih mau ada pemisah, pake garis tipis solid di bawah meta */
-.tulisan-meta{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid rgba(109, 76, 65, 0.14) !important;
   padding-bottom: 10px !important;
   margin-bottom: 12px !important;
 }
-
-/* Pastikan meta tetap kiri/kanan */
-.tulisan-meta{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-}
 .meta-left, .meta-right{
   display:flex;
   align-items:center;
   gap:10px;
 }
-.meta-right{ margin-left:auto; }
-
+.meta-right{
+  margin-left:auto;
+  justify-content:flex-end;
+  text-align:right;
+  white-space:nowrap;
+}
 
 /* === FORCE: hilangkan garis putus-putus di area tanggal === */
 .tulisan-card .tanggal,
@@ -622,7 +540,6 @@ footer p:last-child {
   background-image: none !important;
 }
 
-/* kalau garisnya dibuat pakai pseudo element */
 .tulisan-card .tanggal::before,
 .tulisan-card .tanggal::after,
 .tulisan-card .meta-right::before,
@@ -635,15 +552,148 @@ footer p:last-child {
   background: none !important;
 }
 
-/* pastikan tanggal benar-benar nempel ke kanan */
-.tulisan-meta{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/* =========================================================
+   SWEETALERT2 POPUP (Baca selengkapnya) — BEAUTIFY OVERRIDE
+========================================================= */
+
+.swal2-container {
+  backdrop-filter: blur(6px);
 }
-.meta-right{
-  margin-left: auto;
-  justify-content: flex-end;
-  text-align: right;
-  white-space: nowrap;
+
+.swal2-popup {
+  border-radius: 18px !important;
+  padding: 22px 22px 18px !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(109, 76, 65, 0.16) !important;
+  background: linear-gradient(180deg, #ffffff, #fbf4ee) !important;
+}
+
+.swal2-title {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 900 !important;
+  color: #4e342e !important;
+  letter-spacing: 0.2px;
+  font-size: 26px !important;
+  margin-bottom: 6px !important;
+}
+
+.swal2-close {
+  color: #6d4c41 !important;
+  border-radius: 12px !important;
+  width: 36px !important;
+  height: 36px !important;
+  transition: 0.2s ease;
+}
+.swal2-close:hover {
+  background: rgba(109, 76, 65, 0.10) !important;
+  transform: scale(1.02);
+}
+
+.swal2-html-container {
+  margin: 10px 0 0 !important;
+  padding: 0 !important;
+  color: #3f3f3f !important;
+  font-family: "Open Sans", sans-serif !important;
+  line-height: 1.85 !important;
+  font-size: 14.5px !important;
+}
+
+.swal-tulisan-wrap {
+  text-align: left;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(109, 76, 65, 0.12);
+  border-radius: 14px;
+}
+
+.swal-tulisan-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #6d4c41;
+  font-weight: 800;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #f9f3ef;
+  border: 1px solid rgba(109, 76, 65, 0.14);
+}
+
+.swal-tulisan-isi {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: min(56vh, 420px);
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.swal-tulisan-isi::-webkit-scrollbar { width: 8px; }
+.swal-tulisan-isi::-webkit-scrollbar-thumb {
+  background: rgba(109, 76, 65, 0.35);
+  border-radius: 999px;
+}
+.swal-tulisan-isi::-webkit-scrollbar-track {
+  background: rgba(109, 76, 65, 0.08);
+  border-radius: 999px;
+}
+
+.swal2-actions { margin-top: 14px !important; }
+
+.swal2-confirm {
+  background: #6d4c41 !important;
+  border-radius: 14px !important;
+  padding: 10px 16px !important;
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.2px;
+  box-shadow: 0 10px 20px rgba(109, 76, 65, 0.20) !important;
+  transition: 0.2s ease !important;
+}
+.swal2-confirm:hover {
+  background: #8d6e63 !important;
+  transform: translateY(-1px);
+}
+.swal2-confirm:focus {
+  box-shadow: 0 0 0 4px rgba(176, 137, 104, 0.25) !important;
+}
+
+.btn-readmore {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #6d4c41, #8d6e63);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.15px;
+  box-shadow: 0 10px 18px rgba(109, 76, 65, 0.18);
+  transition: 0.2s ease;
+  width: fit-content;
+}
+
+.btn-readmore:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(109, 76, 65, 0.24);
+  filter: brightness(1.02);
+}
+
+.btn-readmore:active {
+  transform: translateY(0px);
+  box-shadow: 0 10px 18px rgba(109, 76, 65, 0.18);
+}
+
+.btn-readmore:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(176, 137, 104, 0.25), 0 10px 18px rgba(109, 76, 65, 0.18);
+}
+
+@media (max-width: 480px) {
+  .swal2-popup { padding: 18px 16px 14px !important; }
+  .swal2-title { font-size: 20px !important; }
+  .swal-tulisan-isi { max-height: 52vh; }
 }
